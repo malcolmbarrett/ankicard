@@ -25,12 +25,16 @@ def create_note(
     )
 
 
-def create_deck(deck_name: str = "Immersion Kit", deck_id: int = 2059400110) -> genanki.Deck:
+def create_deck(
+    deck_name: str = "Immersion Kit", deck_id: int = 2059400110
+) -> genanki.Deck:
     """Create an Anki deck."""
     return genanki.Deck(deck_id, deck_name)
 
 
-def export_package(deck: genanki.Deck, media_files: list[str], output_path: str) -> None:
+def export_package(
+    deck: genanki.Deck, media_files: list[str], output_path: str
+) -> None:
     """Export Anki package to .apkg file."""
     package = genanki.Package(deck)
     package.media_files = media_files

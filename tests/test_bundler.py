@@ -1,4 +1,3 @@
-import pytest
 import zipfile
 from pathlib import Path
 from ankicard.media.bundler import extract_from_zip, copy_media_file
@@ -69,7 +68,9 @@ class TestExtractFromZip:
 
         assert result["image"] is not None
         # Should only extract one
-        extracted_images = list(output_dir.glob("*.jpg")) + list(output_dir.glob("*.png"))
+        extracted_images = list(output_dir.glob("*.jpg")) + list(
+            output_dir.glob("*.png")
+        )
         assert len(extracted_images) == 1
 
     def test_extract_empty_zip(self, tmp_path):
@@ -78,7 +79,7 @@ class TestExtractFromZip:
         output_dir = tmp_path / "output"
         output_dir.mkdir()
 
-        with zipfile.ZipFile(zip_path, "w") as zf:
+        with zipfile.ZipFile(zip_path, "w"):
             pass  # Empty ZIP
 
         result = extract_from_zip(str(zip_path), str(output_dir))

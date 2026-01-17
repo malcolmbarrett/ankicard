@@ -1,4 +1,3 @@
-import pytest
 from click.testing import CliRunner
 from unittest.mock import patch, Mock
 from ankicard.cli import cli
@@ -256,7 +255,9 @@ class TestGenerateCommand:
         mock_note = Mock()
         mock_create_note.return_value = mock_note
 
-        result = self.runner.invoke(cli, ["generate", "テスト", "--no-audio", "--no-image"])
+        result = self.runner.invoke(
+            cli, ["generate", "テスト", "--no-audio", "--no-image"]
+        )
 
         assert result.exit_code == 0
         # Audio generation should not be called
@@ -283,6 +284,7 @@ class TestTranscribeCommand:
         with self.runner.isolated_filesystem():
             # Create fake audio file
             from pathlib import Path
+
             Path("test.mp3").touch()
             result = self.runner.invoke(cli, ["transcribe", "test.mp3"])
 
@@ -299,6 +301,7 @@ class TestTranscribeCommand:
 
         with self.runner.isolated_filesystem():
             from pathlib import Path
+
             Path("test.mp3").touch()
             result = self.runner.invoke(cli, ["transcribe", "test.mp3"])
 
@@ -316,6 +319,7 @@ class TestTranscribeCommand:
 
         with self.runner.isolated_filesystem():
             from pathlib import Path
+
             Path("test.txt").touch()
             result = self.runner.invoke(cli, ["transcribe", "test.txt"])
 
@@ -325,7 +329,9 @@ class TestTranscribeCommand:
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.transcription.transcribe_audio")
     @patch("ankicard.cli.transcription.validate_audio_file")
-    def test_transcribe_with_output(self, mock_validate, mock_transcribe, mock_settings):
+    def test_transcribe_with_output(
+        self, mock_validate, mock_transcribe, mock_settings
+    ):
         """Test transcribe command with output file."""
         mock_settings_instance = Mock()
         mock_settings_instance.openai_api_key = "test-key"
@@ -335,8 +341,11 @@ class TestTranscribeCommand:
 
         with self.runner.isolated_filesystem():
             from pathlib import Path
+
             Path("test.mp3").touch()
-            result = self.runner.invoke(cli, ["transcribe", "test.mp3", "--output", "out.txt"])
+            result = self.runner.invoke(
+                cli, ["transcribe", "test.mp3", "--output", "out.txt"]
+            )
 
             assert result.exit_code == 0
             assert "Saved transcription to: out.txt" in result.output
@@ -396,8 +405,11 @@ class TestGenerateWithAudio:
 
         with self.runner.isolated_filesystem():
             from pathlib import Path
+
             Path("test.mp3").write_bytes(b"fake audio")
-            result = self.runner.invoke(cli, ["generate", "--from-audio", "test.mp3", "--no-image"])
+            result = self.runner.invoke(
+                cli, ["generate", "--from-audio", "test.mp3", "--no-image"]
+            )
 
         assert result.exit_code == 0
         assert "Transcribing: test.mp3" in result.output
@@ -450,9 +462,17 @@ class TestGenerateWithAudio:
 
         with self.runner.isolated_filesystem():
             from pathlib import Path
+
             Path("test.mp3").write_bytes(b"fake audio")
             result = self.runner.invoke(
-                cli, ["generate", "--from-audio", "test.mp3", "--use-original-audio", "--no-image"]
+                cli,
+                [
+                    "generate",
+                    "--from-audio",
+                    "test.mp3",
+                    "--use-original-audio",
+                    "--no-image",
+                ],
             )
 
         assert result.exit_code == 0

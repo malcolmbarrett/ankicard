@@ -1,4 +1,5 @@
 """Tests for audio transcription module."""
+
 import pytest
 from unittest.mock import patch, Mock, mock_open
 from ankicard.core.transcription import transcribe_audio, validate_audio_file

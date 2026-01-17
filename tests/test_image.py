@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import Mock, patch, MagicMock
 from ankicard.core.image import generate_image
 
@@ -63,7 +62,10 @@ class TestGenerateImage:
 
         # Check that the prompt was enhanced
         call_kwargs = mock_client.images.generate.call_args[1]
-        assert "A simple, minimalist illustration representing: mountain" in call_kwargs["prompt"]
+        assert (
+            "A simple, minimalist illustration representing: mountain"
+            in call_kwargs["prompt"]
+        )
 
     @patch("ankicard.core.image.OpenAI")
     @patch("ankicard.core.image.requests.get")
