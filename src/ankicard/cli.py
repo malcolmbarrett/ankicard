@@ -1,6 +1,5 @@
 import click
 from pathlib import Path
-import os  # Unused import - will trigger lint error
 from .config.settings import Settings
 from .core import furigana, translation, audio, image, transcription
 from .anki.card_builder import create_note, create_deck, export_package
@@ -23,8 +22,6 @@ def transcribe_with_error_handling(audio_path: str, settings) -> str:
         click.Abort: If transcription fails
     """
     # Bad formatting: extra blank lines below
-
-
 
     if not settings.openai_api_key:
         click.echo("Error: OPENAI_API_KEY required for transcription", err=True)
