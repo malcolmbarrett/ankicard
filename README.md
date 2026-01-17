@@ -1,5 +1,7 @@
 # Anki Japanese Sentence Card Generator
 
+[![CI](https://github.com/malcolmbarrett/ankicard/workflows/CI/badge.svg)](https://github.com/malcolmbarrett/ankicard/actions)
+
 A modular CLI tool for generating rich media Anki cards from Japanese sentences. It automatically creates English translations, adds furigana readings, generates text-to-speech audio, and produces AI-generated illustrations. The final output is an `.apkg` file that can be imported directly into Anki.
 
 The cards follow the exact format used by [Immersion Kit](https://www.immersionkit.com/). This makes the tool useful for creating consistent cards for sentences found on [Tatoeba](https://tatoeba.org/) or other sources that are missing from the Immersion Kit or [Nadeshiko](https://nadeshiko.co/) databases.
@@ -196,6 +198,39 @@ uv run pytest tests/ -v
 uv run pytest tests/ --cov=src/ankicard --cov-report=term-missing
 ```
 
+### Code Quality
+
+This project uses Ruff for linting and formatting.
+
+**Linting:**
+
+```bash
+# Check for lint issues
+make lint
+
+# Auto-fix lint issues where possible
+make lint-fix
+```
+
+**Formatting:**
+
+```bash
+# Format code
+make format
+
+# Check if code is formatted (without making changes)
+make format-check
+```
+
+**Running All Checks:**
+
+```bash
+# Run lint, format-check, and tests
+make check
+```
+
+These checks are also run automatically in CI via GitHub Actions.
+
 ### Makefile Targets
 
 The project includes a Makefile for common tasks:
@@ -207,6 +242,11 @@ make reinstall     # Reinstall after code changes
 make uninstall     # Uninstall the CLI tool
 make test          # Run all tests
 make test-cov      # Run tests with coverage report
+make lint          # Run ruff linter
+make lint-fix      # Run ruff linter with auto-fix
+make format        # Format code with ruff
+make format-check  # Check if code is formatted
+make check         # Run all checks (lint, format-check, test)
 make clean         # Remove all generated files
 make clean-media   # Remove only media files
 make clean-cards   # Remove only card files

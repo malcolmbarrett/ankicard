@@ -1,6 +1,4 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from pathlib import Path
+from unittest.mock import Mock, patch
 from ankicard.core.audio import generate_audio
 
 

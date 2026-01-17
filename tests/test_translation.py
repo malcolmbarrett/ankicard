@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import Mock, patch
 from ankicard.core.translation import translate_to_english, get_translator
 
@@ -47,7 +46,9 @@ class TestTranslateToEnglish:
         mock_translator.translate.return_value = "Glass has also been excavated from tombs of the Warring States period in China."
         mock_get_translator.return_value = mock_translator
 
-        result = translate_to_english("中国でも戦国時代の墳墓からガラスが出土している。")
+        result = translate_to_english(
+            "中国でも戦国時代の墳墓からガラスが出土している。"
+        )
 
         assert "Glass" in result
         assert "China" in result
@@ -60,6 +61,7 @@ class TestGetTranslator:
         """Test that get_translator returns the same instance."""
         # Reset the global translator
         import ankicard.core.translation as translation_module
+
         translation_module._translator = None
 
         translator1 = get_translator()

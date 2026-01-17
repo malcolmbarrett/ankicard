@@ -44,7 +44,12 @@ def cli():
 
 @cli.command(name="furigana")
 @click.argument("sentence", metavar="<sentence>", required=False)
-@click.option("--from-audio", "audio_path", type=click.Path(exists=True), help="Transcribe audio to get sentence")
+@click.option(
+    "--from-audio",
+    "audio_path",
+    type=click.Path(exists=True),
+    help="Transcribe audio to get sentence",
+)
 def furigana_cmd(sentence, audio_path):
     """Print furigana notation for sentence."""
     if audio_path:
@@ -60,7 +65,12 @@ def furigana_cmd(sentence, audio_path):
 
 @cli.command()
 @click.argument("sentence", metavar="<sentence>", required=False)
-@click.option("--from-audio", "audio_path", type=click.Path(exists=True), help="Transcribe audio to get sentence")
+@click.option(
+    "--from-audio",
+    "audio_path",
+    type=click.Path(exists=True),
+    help="Transcribe audio to get sentence",
+)
 def translate(sentence, audio_path):
     """Print English translation of sentence."""
     if audio_path:
@@ -84,22 +94,27 @@ def transcribe(audio_path, output, language):
 
     if not settings.openai_api_key:
         click.echo("Error: OPENAI_API_KEY required for transcription", err=True)
-        click.echo("Add your OpenAI API key to .env file to enable audio transcription.", err=True)
+        click.echo(
+            "Add your OpenAI API key to .env file to enable audio transcription.",
+            err=True,
+        )
         raise click.Abort()
 
     # Validate audio file
     if not transcription.validate_audio_file(audio_path):
         click.echo(
-            f"Error: Invalid or unsupported audio file.\n"
-            f"Supported formats: MP3, WAV, M4A, MP4, MPEG, MPGA, WEBM",
-            err=True
+            "Error: Invalid or unsupported audio file.\n"
+            "Supported formats: MP3, WAV, M4A, MP4, MPEG, MPGA, WEBM",
+            err=True,
         )
         raise click.Abort()
 
     click.echo(f"Transcribing: {audio_path}")
 
     try:
-        result = transcription.transcribe_audio(audio_path, settings.openai_api_key, language)
+        result = transcription.transcribe_audio(
+            audio_path, settings.openai_api_key, language
+        )
 
         if output:
             with open(output, "w", encoding="utf-8") as f:
@@ -131,7 +146,12 @@ def audio_cmd(sentence, output, slow):
 
 @cli.command(name="image")
 @click.argument("sentence", metavar="<sentence>", required=False)
-@click.option("--from-audio", "audio_path", type=click.Path(exists=True), help="Transcribe audio to get sentence")
+@click.option(
+    "--from-audio",
+    "audio_path",
+    type=click.Path(exists=True),
+    help="Transcribe audio to get sentence",
+)
 @click.option("--output", help="Output file path")
 @click.option("--prompt", help="Custom English prompt (skip translation)")
 def image_cmd(sentence, audio_path, output, prompt):
@@ -146,7 +166,9 @@ def image_cmd(sentence, audio_path, output, prompt):
     if audio_path:
         sentence = transcribe_with_error_handling(audio_path, settings)
     elif not sentence and not prompt:
-        click.echo("Error: Provide either <sentence>, --from-audio, or --prompt", err=True)
+        click.echo(
+            "Error: Provide either <sentence>, --from-audio, or --prompt", err=True
+        )
         raise click.Abort()
 
     if not output:
@@ -166,16 +188,47 @@ def image_cmd(sentence, audio_path, output, prompt):
 
 @cli.command()
 @click.argument("sentence", metavar="<sentence>", required=False)
-@click.option("--from-audio", "audio_input", type=click.Path(exists=True), help="Transcribe audio to generate card")
-@click.option("--from-audio-zip", "audio_zip", type=click.Path(exists=True), help="Extract audio from ZIP and transcribe")
-@click.option("--use-original-audio", is_flag=True, help="Use input audio instead of generating TTS")
-@click.option("--image", "image_path", type=click.Path(exists=True), help="Use existing image")
-@click.option("--audio", "audio_path", type=click.Path(exists=True), help="Use existing audio")
-@click.option("--zip", "zip_path", type=click.Path(exists=True), help="Extract media from ZIP")
+@click.option(
+    "--from-audio",
+    "audio_input",
+    type=click.Path(exists=True),
+    help="Transcribe audio to generate card",
+)
+@click.option(
+    "--from-audio-zip",
+    "audio_zip",
+    type=click.Path(exists=True),
+    help="Extract audio from ZIP and transcribe",
+)
+@click.option(
+    "--use-original-audio",
+    is_flag=True,
+    help="Use input audio instead of generating TTS",
+)
+@click.option(
+    "--image", "image_path", type=click.Path(exists=True), help="Use existing image"
+)
+@click.option(
+    "--audio", "audio_path", type=click.Path(exists=True), help="Use existing audio"
+)
+@click.option(
+    "--zip", "zip_path", type=click.Path(exists=True), help="Extract media from ZIP"
+)
 @click.option("--output-dir", type=click.Path(), help="Output directory for .apkg")
 @click.option("--no-image", is_flag=True, help="Skip image generation")
 @click.option("--no-audio", is_flag=True, help="Skip audio generation")
-def generate(sentence, audio_input, audio_zip, use_original_audio, image_path, audio_path, zip_path, output_dir, no_image, no_audio):
+def generate(
+    sentence,
+    audio_input,
+    audio_zip,
+    use_original_audio,
+    image_path,
+    audio_path,
+    zip_path,
+    output_dir,
+    no_image,
+    no_audio,
+):
     """Generate complete Anki card from sentence."""
     settings = Settings.load()
     if output_dir:
@@ -184,7 +237,9 @@ def generate(sentence, audio_input, audio_zip, use_original_audio, image_path, a
 
     # Input validation
     if not sentence and not audio_input and not audio_zip:
-        click.echo("Error: Provide <sentence>, --from-audio, or --from-audio-zip", err=True)
+        click.echo(
+            "Error: Provide <sentence>, --from-audio, or --from-audio-zip", err=True
+        )
         raise click.Abort()
 
     # Generate unique ID
@@ -227,11 +282,15 @@ def generate(sentence, audio_input, audio_zip, use_original_audio, image_path, a
     if not no_audio:
         if use_original_audio and audio_input:
             # Use original audio from input
-            final_audio_path = copy_media_file(audio_input, settings.media_dir, filenames["audio"])
+            final_audio_path = copy_media_file(
+                audio_input, settings.media_dir, filenames["audio"]
+            )
             click.echo(f"Using original audio: {audio_input}")
         elif audio_path:
             # Use provided audio file
-            final_audio_path = copy_media_file(audio_path, settings.media_dir, filenames["audio"])
+            final_audio_path = copy_media_file(
+                audio_path, settings.media_dir, filenames["audio"]
+            )
         else:
             # Generate TTS audio
             final_audio_path = audio.generate_audio(
@@ -242,7 +301,9 @@ def generate(sentence, audio_input, audio_zip, use_original_audio, image_path, a
     final_image_path = None
     if not no_image:
         if image_path:
-            final_image_path = copy_media_file(image_path, settings.media_dir, filenames["image"])
+            final_image_path = copy_media_file(
+                image_path, settings.media_dir, filenames["image"]
+            )
         elif settings.openai_api_key:
             final_image_path = image.generate_image(
                 english_text,

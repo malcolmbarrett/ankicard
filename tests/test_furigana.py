@@ -1,4 +1,3 @@
-import pytest
 from ankicard.core.furigana import to_hiragana, get_furigana, get_tokenizer
 
 

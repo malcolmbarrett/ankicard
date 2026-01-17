@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import genanki
 from ankicard.anki.card_builder import create_note, create_deck, export_package
 from ankicard.anki.models import IMMERSION_KIT_MODEL

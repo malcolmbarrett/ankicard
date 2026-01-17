@@ -1,5 +1,3 @@
-import pytest
-import uuid
 from ankicard.media.manager import generate_unique_id, generate_media_filenames
 
 

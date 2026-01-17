@@ -3,7 +3,9 @@ import requests
 import os
 
 
-def generate_image(prompt: str, output_path: str, api_key: str | None = None) -> str | None:
+def generate_image(
+    prompt: str, output_path: str, api_key: str | None = None
+) -> str | None:
     """Generates an image using DALL-E 3."""
     if not api_key:
         return None

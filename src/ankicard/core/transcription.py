@@ -1,4 +1,5 @@
 """Audio transcription using OpenAI Whisper API."""
+
 from openai import OpenAI
 from pathlib import Path
 
