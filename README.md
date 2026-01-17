@@ -1,6 +1,7 @@
 # Anki Japanese Sentence Card Generator
 
 [![CI](https://github.com/malcolmbarrett/ankicard/workflows/CI/badge.svg)](https://github.com/malcolmbarrett/ankicard/actions)
+[![codecov](https://codecov.io/gh/malcolmbarrett/ankicard/branch/main/graph/badge.svg)](https://codecov.io/gh/malcolmbarrett/ankicard)
 
 A modular CLI tool for generating rich media Anki cards from Japanese sentences. It automatically creates English translations, adds furigana readings, generates text-to-speech audio, and produces AI-generated illustrations. The final output is an `.apkg` file that can be imported directly into Anki.
 
