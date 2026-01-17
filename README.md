@@ -20,13 +20,24 @@ This makes the `ankicard` command available globally.
 
 ## Configuration
 
-Create a `.env` file in your working directory with your OpenAI API key to enable image generation:
+Create a `.env` file in your working directory with your OpenAI API key to enable image generation and audio transcription:
 
 ```
 OPENAI_API_KEY=your-key-here
 ```
 
-Image generation is optional - the tool will skip images if no API key is provided.
+Image generation and audio transcription are optional - the tool will skip these features if no API key is provided.
+
+## Audio Transcription
+
+The tool includes audio transcription powered by OpenAI's Whisper API. This enables:
+- Creating Anki cards directly from audio recordings
+- Extracting Japanese text without manual typing
+- Using original audio recordings instead of TTS
+
+**Requirements:** Set `OPENAI_API_KEY` in your `.env` file.
+
+**Supported formats:** MP3, WAV, M4A, MP4, MPEG, MPGA, WEBM
 
 ## Usage
 
@@ -40,6 +51,9 @@ ankicard generate "中国でも戦国時代の墳墓からガラスが出土し�
 
 #### Options
 
+- `--from-audio PATH` - Transcribe audio file to generate card
+- `--from-audio-zip PATH` - Extract audio from ZIP and transcribe
+- `--use-original-audio` - Use input audio instead of generating TTS
 - `--image PATH` - Use an existing image file instead of generating
 - `--audio PATH` - Use an existing audio file instead of generating
 - `--zip PATH` - Extract image and audio from a ZIP bundle
@@ -50,6 +64,9 @@ ankicard generate "中国でも戦国時代の墳墓からガラスが出土し�
 #### Examples
 
 ```bash
+# From text (traditional usage)
+ankicard generate "中国でも戦国時代の墳墓からガラスが出土している。"
+
 # Skip image generation
 ankicard generate "こんにちは" --no-image
 
@@ -58,19 +75,50 @@ ankicard generate "ありがとう" --image custom.jpg --audio custom.mp3
 
 # Extract media from ZIP
 ankicard generate "さようなら" --zip media_bundle.zip
+
+# From audio file (transcribe automatically)
+ankicard generate --from-audio recording.mp3
+
+# Use original audio instead of TTS
+ankicard generate --from-audio recording.mp3 --use-original-audio
+
+# From ZIP with audio + screenshot
+ankicard generate --from-audio-zip bundle.zip
+
+# Audio + existing image
+ankicard generate --from-audio recording.mp3 --image screenshot.jpg
 ```
 
 ### Individual Component Commands
 
 Use components separately for custom workflows:
 
+#### Transcribe Audio
+
+Extract Japanese text from audio files:
+
+```bash
+ankicard transcribe recording.mp3
+# Output: 中国でも戦国時代の墳墓からガラスが出土している。
+
+# Save to file
+ankicard transcribe recording.mp3 --output transcript.txt
+
+# Specify language (default: ja)
+ankicard transcribe recording.mp3 --language ja
+```
+
 #### Furigana
 
 Print furigana notation to console:
 
 ```bash
+# From text
 ankicard furigana "日本語"
 # Output: 日本語[にほんご]
+
+# From audio
+ankicard furigana --from-audio recording.mp3
 ```
 
 #### Translation
@@ -78,8 +126,12 @@ ankicard furigana "日本語"
 Translate Japanese text to English:
 
 ```bash
+# From text
 ankicard translate "こんにちは"
 # Output: Hello
+
+# From audio
+ankicard translate --from-audio recording.mp3
 ```
 
 #### Audio
@@ -99,8 +151,12 @@ ankicard audio "難しい文章" --slow --output custom.mp3
 Generate image only (requires OpenAI API key):
 
 ```bash
+# From text
 ankicard image "桜の木"
 # Output: Generated image: anki_media/anki_XXXXX.jpg
+
+# From audio
+ankicard image --from-audio recording.mp3
 
 # With custom prompt
 ankicard image "猫" --prompt "A cute cartoon cat"
