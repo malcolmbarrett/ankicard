@@ -261,3 +261,207 @@ class TestGenerateCommand:
         assert result.exit_code == 0
         # Audio generation should not be called
         mock_gen_audio.assert_not_called()
+
+
+class TestTranscribeCommand:
+    """Tests for transcribe command."""
+
+    def setup_method(self):
+        self.runner = CliRunner()
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.transcription.transcribe_audio")
+    @patch("ankicard.cli.transcription.validate_audio_file")
+    def test_transcribe_basic(self, mock_validate, mock_transcribe, mock_settings):
+        """Test basic transcribe command."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.openai_api_key = "test-key"
+        mock_settings.load.return_value = mock_settings_instance
+        mock_validate.return_value = True
+        mock_transcribe.return_value = "こんにちは"
+
+        with self.runner.isolated_filesystem():
+            # Create fake audio file
+            from pathlib import Path
+            Path("test.mp3").touch()
+            result = self.runner.invoke(cli, ["transcribe", "test.mp3"])
+
+        assert result.exit_code == 0
+        assert "こんにちは" in result.output
+        mock_transcribe.assert_called_once_with("test.mp3", "test-key", "ja")
+
+    @patch("ankicard.cli.Settings")
+    def test_transcribe_no_api_key(self, mock_settings):
+        """Test transcribe without API key."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.openai_api_key = None
+        mock_settings.load.return_value = mock_settings_instance
+
+        with self.runner.isolated_filesystem():
+            from pathlib import Path
+            Path("test.mp3").touch()
+            result = self.runner.invoke(cli, ["transcribe", "test.mp3"])
+
+        assert result.exit_code != 0
+        assert "OPENAI_API_KEY" in result.output
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.transcription.validate_audio_file")
+    def test_transcribe_invalid_file(self, mock_validate, mock_settings):
+        """Test transcribe with invalid audio file."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.openai_api_key = "test-key"
+        mock_settings.load.return_value = mock_settings_instance
+        mock_validate.return_value = False
+
+        with self.runner.isolated_filesystem():
+            from pathlib import Path
+            Path("test.txt").touch()
+            result = self.runner.invoke(cli, ["transcribe", "test.txt"])
+
+        assert result.exit_code != 0
+        assert "Invalid or unsupported audio file" in result.output
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.transcription.transcribe_audio")
+    @patch("ankicard.cli.transcription.validate_audio_file")
+    def test_transcribe_with_output(self, mock_validate, mock_transcribe, mock_settings):
+        """Test transcribe command with output file."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.openai_api_key = "test-key"
+        mock_settings.load.return_value = mock_settings_instance
+        mock_validate.return_value = True
+        mock_transcribe.return_value = "日本語のテスト"
+
+        with self.runner.isolated_filesystem():
+            from pathlib import Path
+            Path("test.mp3").touch()
+            result = self.runner.invoke(cli, ["transcribe", "test.mp3", "--output", "out.txt"])
+
+            assert result.exit_code == 0
+            assert "Saved transcription to: out.txt" in result.output
+            # Check file was created
+            assert Path("out.txt").exists()
+
+
+class TestGenerateWithAudio:
+    """Tests for generate command with audio transcription."""
+
+    def setup_method(self):
+        self.runner = CliRunner()
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.transcription.transcribe_audio")
+    @patch("ankicard.cli.translation.translate_to_english")
+    @patch("ankicard.cli.furigana.get_furigana")
+    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_note")
+    @patch("ankicard.cli.export_package")
+    @patch("ankicard.cli.audio.generate_audio")
+    @patch("ankicard.cli.generate_unique_id")
+    @patch("ankicard.cli.generate_media_filenames")
+    def test_generate_from_audio(
+        self,
+        mock_gen_filenames,
+        mock_gen_id,
+        mock_gen_audio,
+        mock_export,
+        mock_create_note,
+        mock_create_deck,
+        mock_get_furigana,
+        mock_translate,
+        mock_transcribe,
+        mock_settings,
+    ):
+        """Test generate command with --from-audio flag."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.output_dir = "anki_cards"
+        mock_settings_instance.openai_api_key = "test-key"
+        mock_settings_instance.deck_name = "Test Deck"
+        mock_settings_instance.deck_id = 123
+        mock_settings.load.return_value = mock_settings_instance
+
+        mock_gen_id.return_value = "abc123"
+        mock_gen_filenames.return_value = {"audio": "test.mp3", "image": "test.jpg"}
+        mock_transcribe.return_value = "日本語のテスト"
+        mock_translate.return_value = "Japanese test"
+        mock_get_furigana.return_value = "日本語[にほんご]のテスト"
+        mock_gen_audio.return_value = "anki_media/test.mp3"
+
+        mock_deck = Mock()
+        mock_create_deck.return_value = mock_deck
+        mock_note = Mock()
+        mock_create_note.return_value = mock_note
+
+        with self.runner.isolated_filesystem():
+            from pathlib import Path
+            Path("test.mp3").write_bytes(b"fake audio")
+            result = self.runner.invoke(cli, ["generate", "--from-audio", "test.mp3", "--no-image"])
+
+        assert result.exit_code == 0
+        assert "Transcribing: test.mp3" in result.output
+        assert "Transcribed: 日本語のテスト" in result.output
+        mock_transcribe.assert_called_once_with("test.mp3", "test-key")
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.transcription.transcribe_audio")
+    @patch("ankicard.cli.translation.translate_to_english")
+    @patch("ankicard.cli.furigana.get_furigana")
+    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_note")
+    @patch("ankicard.cli.export_package")
+    @patch("ankicard.cli.copy_media_file")
+    @patch("ankicard.cli.generate_unique_id")
+    @patch("ankicard.cli.generate_media_filenames")
+    def test_generate_from_audio_use_original(
+        self,
+        mock_gen_filenames,
+        mock_gen_id,
+        mock_copy_media,
+        mock_export,
+        mock_create_note,
+        mock_create_deck,
+        mock_get_furigana,
+        mock_translate,
+        mock_transcribe,
+        mock_settings,
+    ):
+        """Test generate with --use-original-audio flag."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.output_dir = "anki_cards"
+        mock_settings_instance.openai_api_key = "test-key"
+        mock_settings_instance.deck_name = "Test Deck"
+        mock_settings_instance.deck_id = 123
+        mock_settings.load.return_value = mock_settings_instance
+
+        mock_gen_id.return_value = "abc123"
+        mock_gen_filenames.return_value = {"audio": "test.mp3", "image": "test.jpg"}
+        mock_transcribe.return_value = "日本語のテスト"
+        mock_translate.return_value = "Japanese test"
+        mock_get_furigana.return_value = "日本語[にほんご]のテスト"
+        mock_copy_media.return_value = "anki_media/test.mp3"
+
+        mock_deck = Mock()
+        mock_create_deck.return_value = mock_deck
+        mock_note = Mock()
+        mock_create_note.return_value = mock_note
+
+        with self.runner.isolated_filesystem():
+            from pathlib import Path
+            Path("test.mp3").write_bytes(b"fake audio")
+            result = self.runner.invoke(
+                cli, ["generate", "--from-audio", "test.mp3", "--use-original-audio", "--no-image"]
+            )
+
+        assert result.exit_code == 0
+        assert "Using original audio: test.mp3" in result.output
+        mock_copy_media.assert_called_once()
+
+    def test_generate_no_input(self):
+        """Test generate without sentence or audio."""
+        result = self.runner.invoke(cli, ["generate"])
+
+        assert result.exit_code != 0
+        assert "Provide <sentence>, --from-audio, or --from-audio-zip" in result.output
