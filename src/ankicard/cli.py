@@ -22,6 +22,10 @@ def transcribe_with_error_handling(audio_path: str, settings) -> str:
     Raises:
         click.Abort: If transcription fails
     """
+    # Bad formatting: extra blank lines below
+
+
+
     if not settings.openai_api_key:
         click.echo("Error: OPENAI_API_KEY required for transcription", err=True)
         raise click.Abort()
