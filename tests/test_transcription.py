@@ -1,7 +1,6 @@
 """Tests for audio transcription module."""
 import pytest
 from unittest.mock import patch, Mock, mock_open
-from pathlib import Path
 from ankicard.core.transcription import transcribe_audio, validate_audio_file
 
 
@@ -69,7 +68,7 @@ class TestTranscribeAudio:
         mock_client.audio.transcriptions.create.return_value = mock_transcript
 
         with patch("builtins.open", mock_open(read_data=b"fake audio")):
-            result = transcribe_audio("test.mp3", "test-key", language="en")
+            transcribe_audio("test.mp3", "test-key", language="en")
 
         call_kwargs = mock_client.audio.transcriptions.create.call_args[1]
         assert call_kwargs["language"] == "en"

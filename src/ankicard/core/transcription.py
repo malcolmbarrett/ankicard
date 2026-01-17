@@ -22,7 +22,8 @@ def transcribe_audio(
         Transcribed text string
 
     Raises:
-        ValueError: If API key is missing or file doesn't exist
+        ValueError: If API key is missing
+        FileNotFoundError: If the audio file does not exist
         Exception: If transcription fails
     """
     if not api_key:

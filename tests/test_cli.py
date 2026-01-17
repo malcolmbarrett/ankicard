@@ -400,7 +400,7 @@ class TestGenerateWithAudio:
             result = self.runner.invoke(cli, ["generate", "--from-audio", "test.mp3", "--no-image"])
 
         assert result.exit_code == 0
-        assert "Transcribing audio: test.mp3" in result.output
+        assert "Transcribing: test.mp3" in result.output
         assert "Transcribed: 日本語のテスト" in result.output
         mock_transcribe.assert_called_once_with("test.mp3", "test-key")
 

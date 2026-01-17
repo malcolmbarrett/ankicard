@@ -7,6 +7,34 @@ from .media.manager import generate_unique_id, generate_media_filenames
 from .media.bundler import extract_from_zip, copy_media_file
 
 
+def transcribe_with_error_handling(audio_path: str, settings) -> str:
+    """
+    Transcribe audio file with proper error handling.
+
+    Args:
+        audio_path: Path to audio file
+        settings: Settings object with openai_api_key
+
+    Returns:
+        Transcribed text
+
+    Raises:
+        click.Abort: If transcription fails
+    """
+    if not settings.openai_api_key:
+        click.echo("Error: OPENAI_API_KEY required for transcription", err=True)
+        raise click.Abort()
+
+    click.echo(f"Transcribing: {audio_path}")
+    try:
+        text = transcription.transcribe_audio(audio_path, settings.openai_api_key)
+        click.echo(f"Transcribed: {text}\n")
+        return text
+    except Exception as e:
+        click.echo(f"Error: Transcription failed: {e}", err=True)
+        raise click.Abort()
+
+
 @click.group()
 @click.version_option(version="0.2.0")
 def cli():
@@ -21,12 +49,7 @@ def furigana_cmd(sentence, audio_path):
     """Print furigana notation for sentence."""
     if audio_path:
         settings = Settings.load()
-        if not settings.openai_api_key:
-            click.echo("Error: OPENAI_API_KEY required for transcription", err=True)
-            raise click.Abort()
-        click.echo(f"Transcribing: {audio_path}")
-        sentence = transcription.transcribe_audio(audio_path, settings.openai_api_key)
-        click.echo(f"Transcribed: {sentence}\n")
+        sentence = transcribe_with_error_handling(audio_path, settings)
     elif not sentence:
         click.echo("Error: Provide either <sentence> or --from-audio", err=True)
         raise click.Abort()
@@ -42,12 +65,7 @@ def translate(sentence, audio_path):
     """Print English translation of sentence."""
     if audio_path:
         settings = Settings.load()
-        if not settings.openai_api_key:
-            click.echo("Error: OPENAI_API_KEY required for transcription", err=True)
-            raise click.Abort()
-        click.echo(f"Transcribing: {audio_path}")
-        sentence = transcription.transcribe_audio(audio_path, settings.openai_api_key)
-        click.echo(f"Transcribed: {sentence}\n")
+        sentence = transcribe_with_error_handling(audio_path, settings)
     elif not sentence:
         click.echo("Error: Provide either <sentence> or --from-audio", err=True)
         raise click.Abort()
@@ -126,9 +144,7 @@ def image_cmd(sentence, audio_path, output, prompt):
         raise click.Abort()
 
     if audio_path:
-        click.echo(f"Transcribing: {audio_path}")
-        sentence = transcription.transcribe_audio(audio_path, settings.openai_api_key)
-        click.echo(f"Transcribed: {sentence}\n")
+        sentence = transcribe_with_error_handling(audio_path, settings)
     elif not sentence and not prompt:
         click.echo("Error: Provide either <sentence>, --from-audio, or --prompt", err=True)
         raise click.Abort()
@@ -186,15 +202,8 @@ def generate(sentence, audio_input, audio_zip, use_original_audio, image_path, a
             image_path = extracted["image"]
 
     # Transcribe if audio input provided
-    if audio_input or extracted_audio_path:
-        if not settings.openai_api_key:
-            click.echo("Error: OPENAI_API_KEY required for transcription", err=True)
-            click.echo("Add your OpenAI API key to .env file to enable audio transcription.", err=True)
-            raise click.Abort()
-
-        click.echo(f"Transcribing audio: {audio_input}")
-        sentence = transcription.transcribe_audio(audio_input, settings.openai_api_key)
-        click.echo(f"Transcribed: {sentence}")
+    if audio_input:
+        sentence = transcribe_with_error_handling(audio_input, settings)
 
     click.echo(f"Processing: {sentence}")
 
@@ -216,12 +225,10 @@ def generate(sentence, audio_input, audio_zip, use_original_audio, image_path, a
     # Audio handling
     final_audio_path = None
     if not no_audio:
-        if use_original_audio and (audio_input or extracted_audio_path):
+        if use_original_audio and audio_input:
             # Use original audio from input
-            source_audio = audio_input if audio_input else extracted_audio_path
-            if source_audio:
-                final_audio_path = copy_media_file(source_audio, settings.media_dir, filenames["audio"])
-                click.echo(f"Using original audio: {source_audio}")
+            final_audio_path = copy_media_file(audio_input, settings.media_dir, filenames["audio"])
+            click.echo(f"Using original audio: {audio_input}")
         elif audio_path:
             # Use provided audio file
             final_audio_path = copy_media_file(audio_path, settings.media_dir, filenames["audio"])

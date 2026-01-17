@@ -1,1 +1,1 @@
-from . import transcription
+"""Core functionality for the ankicard package."""
