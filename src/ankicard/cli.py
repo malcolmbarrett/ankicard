@@ -1,5 +1,6 @@
 import click
 from pathlib import Path
+import os  # Unused import - will trigger lint error
 from .config.settings import Settings
 from .core import furigana, translation, audio, image, transcription
 from .anki.card_builder import create_note, create_deck, export_package
