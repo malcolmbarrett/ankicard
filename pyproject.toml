@@ -1,14 +1,50 @@
 [project]
-name = "tts-generator"
-version = "0.1.0"
-description = "Add your description here"
+name = "ankicard"
+version = "0.2.0"
+description = "Generate anki cards from Japanese sentences in the same format as https://www.immersionkit.com/. Automatically creates translation, furigana, audio, and image (image requires OpenAI API key)"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "click>=8.1.0",
     "deep-translator>=1.11.4",
     "genanki>=0.13.1",
     "gtts>=2.5.4",
     "janome>=0.5.0",
     "openai>=2.15.0",
     "python-dotenv>=1.2.1",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
+    "pytest-cov>=7.0.0",
+]
+
+[project.scripts]
+ankicard = "ankicard.cli:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers"
+
+[tool.coverage.run]
+source = ["src/ankicard"]
+omit = ["tests/*", "src/ankicard/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
 ]

@@ -8,4 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Test and coverage
+.pytest_cache/
+htmlcov/
+.coverage
+
+# project files
 .env
+anki_media/
+anki_cards/
+.DS_Store
+CLAUDE.md
