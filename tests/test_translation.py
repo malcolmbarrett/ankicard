@@ -1,5 +1,10 @@
 from unittest.mock import Mock, patch
-from ankicard.core.translation import translate_to_english, get_translator
+import pytest
+from ankicard.core.translation import (
+    translate_to_english,
+    get_translator,
+    translate_to_english_openai,
+)
 
 
 class TestTranslateToEnglish:
@@ -73,3 +78,125 @@ class TestGetTranslator:
         translator = get_translator()
         assert translator.source == "ja"
         assert translator.target == "en"
+
+
+class TestTranslateToEnglishOpenAI:
+    """Tests for OpenAI Chat translation."""
+
+    def test_translate_openai_no_api_key(self):
+        """Test that ValueError is raised when no API key is provided."""
+        with pytest.raises(ValueError, match="OpenAI API key required"):
+            translate_to_english_openai("こんにちは", api_key=None)
+
+    @patch("ankicard.core.translation.OpenAI")
+    def test_translate_openai_success(self, mock_openai):
+        """Test successful OpenAI translation."""
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+
+        # Mock API response
+        mock_message = Mock()
+        mock_message.content = "Hello"
+        mock_choice = Mock()
+        mock_choice.message = mock_message
+        mock_response = Mock()
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
+
+        result = translate_to_english_openai("こんにちは", api_key="test-key")
+
+        assert result == "Hello"
+        mock_client.chat.completions.create.assert_called_once()
+
+    @patch("ankicard.core.translation.OpenAI")
+    def test_translate_openai_with_custom_model(self, mock_openai):
+        """Test OpenAI translation with custom model."""
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+
+        mock_message = Mock()
+        mock_message.content = "I am a student"
+        mock_choice = Mock()
+        mock_choice.message = mock_message
+        mock_response = Mock()
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
+
+        result = translate_to_english_openai(
+            "私は学生です", api_key="test-key", model="gpt-4o"
+        )
+
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        assert call_kwargs["model"] == "gpt-4o"
+        assert result == "I am a student"
+
+    @patch("ankicard.core.translation.OpenAI")
+    def test_translate_openai_api_error(self, mock_openai):
+        """Test error handling when API call fails."""
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+        mock_client.chat.completions.create.side_effect = Exception("API Error")
+
+        with pytest.raises(Exception, match="OpenAI translation failed"):
+            translate_to_english_openai("test", api_key="test-key")
+
+    @patch("ankicard.core.translation.OpenAI")
+    def test_translate_openai_empty_response(self, mock_openai):
+        """Test error handling when API returns None content."""
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+
+        mock_message = Mock()
+        mock_message.content = None
+        mock_choice = Mock()
+        mock_choice.message = mock_message
+        mock_response = Mock()
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
+
+        with pytest.raises(Exception, match="OpenAI returned empty translation"):
+            translate_to_english_openai("test", api_key="test-key")
+
+    @patch("ankicard.core.translation.OpenAI")
+    def test_translate_openai_default_model(self, mock_openai):
+        """Test that default model is used correctly."""
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+
+        mock_message = Mock()
+        mock_message.content = "Good morning"
+        mock_choice = Mock()
+        mock_choice.message = mock_message
+        mock_response = Mock()
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
+
+        translate_to_english_openai("おはよう", api_key="test-key")
+
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        assert call_kwargs["model"] == "gpt-4o-mini"  # default
+        assert call_kwargs["temperature"] == 0.3
+
+    @patch("ankicard.core.translation.OpenAI")
+    def test_translate_openai_system_prompt(self, mock_openai):
+        """Test that correct system prompt is used."""
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+
+        mock_message = Mock()
+        mock_message.content = "Test"
+        mock_choice = Mock()
+        mock_choice.message = mock_message
+        mock_response = Mock()
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
+
+        translate_to_english_openai("テスト", api_key="test-key")
+
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        messages = call_kwargs["messages"]
+        assert len(messages) == 2
+        assert messages[0]["role"] == "system"
+        assert "translator" in messages[0]["content"].lower()
+        assert messages[1]["role"] == "user"
+        assert messages[1]["content"] == "テスト"
