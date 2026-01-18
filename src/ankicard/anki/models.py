@@ -2,7 +2,7 @@ import genanki
 
 # Define the Anki Model (Note Type) to match "Immersion Kit" structure
 IMMERSION_KIT_MODEL = genanki.Model(
-    1607392319,  # Random unique ID for the Model
+    1239585222,  # Official Immersion Kit model ID (must match for card compatibility)
     "Immersion Kit Sentence",
     fields=[
         {"name": "Expression"},
