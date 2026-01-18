@@ -81,9 +81,10 @@ class TestAudioCommand:
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio")
     def test_audio_basic(self, mock_generate_audio, mock_settings):
-        """Test basic audio command."""
+        """Test basic audio command with gTTS."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
         mock_generate_audio.return_value = "anki_media/test.mp3"
 
@@ -99,6 +100,7 @@ class TestAudioCommand:
         """Test audio command with custom output."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
         mock_generate_audio.return_value = "custom.mp3"
 
@@ -112,6 +114,7 @@ class TestAudioCommand:
         """Test audio command with slow flag."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
         mock_generate_audio.return_value = "test.mp3"
 
@@ -121,6 +124,35 @@ class TestAudioCommand:
         # Check that slow=True was passed
         call_kwargs = mock_generate_audio.call_args[1]
         assert call_kwargs.get("slow") is True
+
+    @patch("ankicard.cli.Settings")
+    def test_audio_enhance_requires_openai_tts(self, mock_settings):
+        """Test that --enhance-audio errors when used with --no-ai."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = "test-key"  # Has key but using --no-ai
+        mock_settings.load.return_value = mock_settings_instance
+
+        result = self.runner.invoke(
+            cli, ["audio", "こんにちは", "--no-ai", "--enhance-audio"]
+        )
+
+        assert result.exit_code != 0
+        assert "Error: --enhance-audio requires OpenAI TTS" in result.output
+        assert "cannot use with --no-ai" in result.output
+
+    @patch("ankicard.cli.Settings")
+    def test_audio_enhance_requires_api_key(self, mock_settings):
+        """Test that --enhance-audio errors when no API key available."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = None  # No API key
+        mock_settings.load.return_value = mock_settings_instance
+
+        result = self.runner.invoke(cli, ["audio", "こんにちは", "--enhance-audio"])
+
+        assert result.exit_code != 0
+        assert "Error: --enhance-audio requires OpenAI API key" in result.output
 
 
 class TestImageCommand:
@@ -262,6 +294,56 @@ class TestGenerateCommand:
         assert result.exit_code == 0
         # Audio generation should not be called
         mock_gen_audio.assert_not_called()
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.translation.translate_to_english")
+    @patch("ankicard.cli.furigana.get_furigana")
+    def test_generate_enhance_audio_requires_openai_tts(
+        self, mock_get_furigana, mock_translate, mock_settings
+    ):
+        """Test that --enhance-audio errors with --no-ai-audio."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.output_dir = "anki_cards"
+        mock_settings_instance.openai_api_key = "test-key"
+        mock_settings_instance.deck_name = "Test"
+        mock_settings_instance.deck_id = 123
+        mock_settings.load.return_value = mock_settings_instance
+
+        mock_translate.return_value = "test"
+        mock_get_furigana.return_value = "テスト"
+
+        result = self.runner.invoke(
+            cli, ["generate", "こんにちは", "--no-ai-audio", "--enhance-audio"]
+        )
+
+        assert result.exit_code != 0
+        assert "Error: --enhance-audio requires OpenAI TTS" in result.output
+        assert "cannot use with --no-ai-audio" in result.output
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.translation.translate_to_english")
+    @patch("ankicard.cli.furigana.get_furigana")
+    def test_generate_enhance_audio_requires_api_key(
+        self, mock_get_furigana, mock_translate, mock_settings
+    ):
+        """Test that --enhance-audio errors without API key."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.output_dir = "anki_cards"
+        mock_settings_instance.openai_api_key = None  # No API key
+        mock_settings_instance.deck_name = "Test"
+        mock_settings_instance.deck_id = 123
+        mock_settings.load.return_value = mock_settings_instance
+
+        mock_translate.return_value = "test"
+        mock_get_furigana.return_value = "テスト"
+
+        result = self.runner.invoke(cli, ["generate", "こんにちは", "--enhance-audio"])
+
+        assert result.exit_code != 0
+        assert "Error: --enhance-audio requires OpenAI TTS" in result.output
+        assert "without API key" in result.output
 
 
 class TestTranscribeCommand:
@@ -408,7 +490,8 @@ class TestGenerateWithAudio:
 
             Path("test.mp3").write_bytes(b"fake audio")
             result = self.runner.invoke(
-                cli, ["generate", "--from-audio", "test.mp3", "--no-image"]
+                cli,
+                ["generate", "--from-audio", "test.mp3", "--no-image", "--no-ai-audio"],
             )
 
         assert result.exit_code == 0

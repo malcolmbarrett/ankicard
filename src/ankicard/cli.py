@@ -73,16 +73,33 @@ def furigana_cmd(sentence, audio_path):
     type=click.Path(exists=True),
     help="Transcribe audio to get sentence",
 )
-def translate(sentence, audio_path):
+@click.option(
+    "--use-ai", is_flag=True, help="Use OpenAI Chat instead of Google Translate"
+)
+@click.option("--model", default="gpt-4o-mini", help="OpenAI model (use with --use-ai)")
+def translate(sentence, audio_path, use_ai, model):
     """Print English translation of sentence."""
+    settings = Settings.load()
+
     if audio_path:
-        settings = Settings.load()
         sentence = transcribe_with_error_handling(audio_path, settings)
     elif not sentence:
         click.echo("Error: Provide either <sentence> or --from-audio", err=True)
         raise click.Abort()
 
-    result = translation.translate_to_english(sentence)
+    if use_ai:
+        if not settings.openai_api_key:
+            click.echo(
+                "Error: OPENAI_API_KEY required for OpenAI translation", err=True
+            )
+            click.echo("Add your OpenAI API key to .env file.", err=True)
+            raise click.Abort()
+        result = translation.translate_to_english_openai(
+            sentence, api_key=settings.openai_api_key, model=model
+        )
+    else:
+        result = translation.translate_to_english(sentence)
+
     click.echo(result)
 
 
@@ -132,17 +149,55 @@ def transcribe(audio_path, output, language):
 @cli.command(name="audio")
 @click.argument("sentence", metavar="<sentence>")
 @click.option("--output", help="Output file path")
-@click.option("--slow", is_flag=True, help="Generate slow-speed audio")
-def audio_cmd(sentence, output, slow):
+@click.option("--slow", is_flag=True, help="Generate slow-speed audio (gTTS only)")
+@click.option(
+    "--no-ai",
+    is_flag=True,
+    help="Use gTTS instead of OpenAI TTS (default: OpenAI TTS if API key available)",
+)
+@click.option("--voice", default="alloy", help="OpenAI voice (default: alloy)")
+@click.option("--model", default="tts-1", help="OpenAI model (default: tts-1)")
+@click.option("--speed", type=float, default=1.0, help="Playback speed (default: 1.0)")
+@click.option(
+    "--enhance-audio",
+    is_flag=True,
+    help="Enhance text for natural speech (requires OpenAI TTS)",
+)
+def audio_cmd(sentence, output, slow, no_ai, voice, model, speed, enhance_audio):
     """Generate audio file for sentence."""
     settings = Settings.load()
     settings.ensure_directories()
+
+    # Validate that enhance-audio requires OpenAI TTS
+    if enhance_audio and no_ai:
+        click.echo(
+            "Error: --enhance-audio requires OpenAI TTS (cannot use with --no-ai)",
+            err=True,
+        )
+        raise click.Abort()
 
     if not output:
         unique_id = generate_unique_id()
         output = Path(settings.media_dir) / f"anki_{unique_id}.mp3"
 
-    audio.generate_audio(sentence, str(output), slow=slow)
+    # Use OpenAI TTS if API key available and not disabled (default), fallback to gTTS
+    if settings.openai_api_key and not no_ai:
+        audio.generate_audio_openai(
+            sentence,
+            str(output),
+            api_key=settings.openai_api_key,
+            model=model,
+            voice=voice,
+            speed=speed,
+            enhance=enhance_audio,
+        )
+    else:
+        # Fallback to gTTS (no API key available or --no-ai flag used)
+        if enhance_audio:
+            click.echo("Error: --enhance-audio requires OpenAI API key", err=True)
+            raise click.Abort()
+        audio.generate_audio(sentence, str(output), slow=slow)
+
     click.echo(f"Generated audio: {output}")
 
 
@@ -219,6 +274,30 @@ def image_cmd(sentence, audio_path, output, prompt):
 @click.option("--output-dir", type=click.Path(), help="Output directory for .apkg")
 @click.option("--no-image", is_flag=True, help="Skip image generation")
 @click.option("--no-audio", is_flag=True, help="Skip audio generation")
+@click.option(
+    "--no-ai-audio",
+    is_flag=True,
+    help="Use gTTS instead of OpenAI TTS (default: OpenAI TTS if API key available)",
+)
+@click.option(
+    "--use-ai-translation", is_flag=True, help="Use OpenAI Chat for translation"
+)
+@click.option(
+    "--ai-voice",
+    default="alloy",
+    help="OpenAI TTS voice (alloy, echo, fable, onyx, nova, shimmer)",
+)
+@click.option(
+    "--ai-audio-model", default="tts-1", help="OpenAI TTS model (tts-1, tts-1-hd)"
+)
+@click.option(
+    "--ai-translation-model", default="gpt-4o-mini", help="OpenAI translation model"
+)
+@click.option(
+    "--enhance-audio",
+    is_flag=True,
+    help="Enhance text for natural speech (use with OpenAI TTS)",
+)
 def generate(
     sentence,
     audio_input,
@@ -230,6 +309,12 @@ def generate(
     output_dir,
     no_image,
     no_audio,
+    no_ai_audio,
+    use_ai_translation,
+    ai_voice,
+    ai_audio_model,
+    ai_translation_model,
+    enhance_audio,
 ):
     """Generate complete Anki card from sentence."""
     settings = Settings.load()
@@ -265,7 +350,18 @@ def generate(
     click.echo(f"Processing: {sentence}")
 
     # Translation
-    english_text = translation.translate_to_english(sentence)
+    if use_ai_translation:
+        if not settings.openai_api_key:
+            click.echo(
+                "Error: OPENAI_API_KEY required for OpenAI translation", err=True
+            )
+            click.echo("Add your OpenAI API key to .env file.", err=True)
+            raise click.Abort()
+        english_text = translation.translate_to_english_openai(
+            sentence, api_key=settings.openai_api_key, model=ai_translation_model
+        )
+    else:
+        english_text = translation.translate_to_english(sentence)
     click.echo(f"Translation: {english_text}")
 
     # Furigana
@@ -278,6 +374,14 @@ def generate(
             image_path = extracted["image"]
         if extracted["audio"] and not audio_path:
             audio_path = extracted["audio"]
+
+    # Validate that enhance-audio requires OpenAI TTS
+    if enhance_audio and (not settings.openai_api_key or no_ai_audio):
+        click.echo(
+            "Error: --enhance-audio requires OpenAI TTS (cannot use with --no-ai-audio or without API key)",
+            err=True,
+        )
+        raise click.Abort()
 
     # Audio handling
     final_audio_path = None
@@ -295,9 +399,22 @@ def generate(
             )
         else:
             # Generate TTS audio
-            final_audio_path = audio.generate_audio(
-                sentence, str(Path(settings.media_dir) / filenames["audio"])
-            )
+            # Use OpenAI TTS if API key available and not disabled (default), fallback to gTTS
+            if settings.openai_api_key and not no_ai_audio:
+                # Use OpenAI TTS (default when API key is available)
+                final_audio_path = audio.generate_audio_openai(
+                    sentence,
+                    str(Path(settings.media_dir) / filenames["audio"]),
+                    api_key=settings.openai_api_key,
+                    model=ai_audio_model,
+                    voice=ai_voice,
+                    enhance=enhance_audio,
+                )
+            else:
+                # Fallback to gTTS (no API key available or --no-ai-audio flag used)
+                final_audio_path = audio.generate_audio(
+                    sentence, str(Path(settings.media_dir) / filenames["audio"])
+                )
 
     # Image
     final_image_path = None
