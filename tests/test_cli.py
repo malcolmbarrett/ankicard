@@ -81,9 +81,10 @@ class TestAudioCommand:
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio")
     def test_audio_basic(self, mock_generate_audio, mock_settings):
-        """Test basic audio command."""
+        """Test basic audio command with gTTS."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
         mock_generate_audio.return_value = "anki_media/test.mp3"
 
@@ -99,6 +100,7 @@ class TestAudioCommand:
         """Test audio command with custom output."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
         mock_generate_audio.return_value = "custom.mp3"
 
@@ -112,6 +114,7 @@ class TestAudioCommand:
         """Test audio command with slow flag."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
         mock_generate_audio.return_value = "test.mp3"
 
@@ -408,7 +411,8 @@ class TestGenerateWithAudio:
 
             Path("test.mp3").write_bytes(b"fake audio")
             result = self.runner.invoke(
-                cli, ["generate", "--from-audio", "test.mp3", "--no-image"]
+                cli,
+                ["generate", "--from-audio", "test.mp3", "--no-image", "--no-ai-audio"],
             )
 
         assert result.exit_code == 0
