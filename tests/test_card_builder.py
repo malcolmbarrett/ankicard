@@ -63,7 +63,7 @@ class TestCreateDeck:
         deck = create_deck()
 
         assert isinstance(deck, genanki.Deck)
-        assert deck.deck_id == 2059400110
+        assert deck.deck_id == 2137715748  # Official Immersion Kit deck ID
         assert deck.name == "Immersion Kit"
 
     def test_create_deck_custom_name(self):
@@ -71,7 +71,7 @@ class TestCreateDeck:
         deck = create_deck(deck_name="My Custom Deck")
 
         assert deck.name == "My Custom Deck"
-        assert deck.deck_id == 2059400110
+        assert deck.deck_id == 2137715748  # Official Immersion Kit deck ID
 
     def test_create_deck_custom_id(self):
         """Test creating a deck with custom ID."""

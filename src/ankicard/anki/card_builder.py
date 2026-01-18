@@ -26,7 +26,7 @@ def create_note(
 
 
 def create_deck(
-    deck_name: str = "Immersion Kit", deck_id: int = 2059400110
+    deck_name: str = "Immersion Kit", deck_id: int = 2137715748
 ) -> genanki.Deck:
     """Create an Anki deck."""
     return genanki.Deck(deck_id, deck_name)
