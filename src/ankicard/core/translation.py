@@ -56,4 +56,4 @@ def translate_to_english_openai(
             raise Exception("OpenAI returned empty translation")
         return translation.strip()
     except Exception as e:
-        raise Exception(f"OpenAI translation failed: {e}")
+        raise Exception(f"OpenAI translation failed: {e}") from e

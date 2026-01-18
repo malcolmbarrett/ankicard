@@ -375,6 +375,14 @@ def generate(
         if extracted["audio"] and not audio_path:
             audio_path = extracted["audio"]
 
+    # Validate that enhance-audio requires OpenAI TTS
+    if enhance_audio and (not settings.openai_api_key or no_ai_audio):
+        click.echo(
+            "Error: --enhance-audio requires OpenAI TTS (cannot use with --no-ai-audio or without API key)",
+            err=True,
+        )
+        raise click.Abort()
+
     # Audio handling
     final_audio_path = None
     if not no_audio:

@@ -43,7 +43,9 @@ def generate_audio(
     text: str, output_path: str, lang: str = "ja", slow: bool = False
 ) -> str:
     """Generate TTS audio file using gTTS."""
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    dirname = os.path.dirname(output_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
     tts = gTTS(text=text, lang=lang, slow=slow)
     tts.save(output_path)
     return output_path
@@ -81,7 +83,9 @@ def generate_audio_openai(
         raise ValueError("OpenAI API key required for TTS generation")
 
     try:
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        dirname = os.path.dirname(output_path)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
 
         # Enhance text for better pronunciation if requested
         speech_text = enhance_text_for_speech(text, api_key) if enhance else text
@@ -95,4 +99,4 @@ def generate_audio_openai(
 
         return output_path
     except Exception as e:
-        raise Exception(f"OpenAI TTS failed: {e}")
+        raise Exception(f"OpenAI TTS failed: {e}") from e
