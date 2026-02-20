@@ -100,9 +100,7 @@ class TestAudioCommand:
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio_voicevox")
     @patch("ankicard.cli.ensure_voicevox_or_fallback")
-    def test_audio_with_voicevox(
-        self, mock_ensure, mock_gen_voicevox, mock_settings
-    ):
+    def test_audio_with_voicevox(self, mock_ensure, mock_gen_voicevox, mock_settings):
         """Test audio command using VOICEVOX."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
@@ -157,9 +155,7 @@ class TestAudioCommand:
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio")
     @patch("ankicard.cli.ensure_voicevox_or_fallback")
-    def test_audio_use_gtts_flag(
-        self, mock_ensure, mock_generate_audio, mock_settings
-    ):
+    def test_audio_use_gtts_flag(self, mock_ensure, mock_generate_audio, mock_settings):
         """Test --use-gtts skips VOICEVOX entirely."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
@@ -178,9 +174,7 @@ class TestAudioCommand:
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio_voicevox")
     @patch("ankicard.cli.ensure_voicevox_or_fallback")
-    def test_audio_with_speaker_id(
-        self, mock_ensure, mock_gen_voicevox, mock_settings
-    ):
+    def test_audio_with_speaker_id(self, mock_ensure, mock_gen_voicevox, mock_settings):
         """Test --speaker-id is forwarded to VOICEVOX."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
@@ -190,9 +184,7 @@ class TestAudioCommand:
         mock_ensure.return_value = True
         mock_gen_voicevox.return_value = "test.mp3"
 
-        result = self.runner.invoke(
-            cli, ["audio", "テスト", "--speaker-id", "2"]
-        )
+        result = self.runner.invoke(cli, ["audio", "テスト", "--speaker-id", "2"])
 
         assert result.exit_code == 0
         call_kwargs = mock_gen_voicevox.call_args[1]
@@ -201,9 +193,7 @@ class TestAudioCommand:
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio_voicevox")
     @patch("ankicard.cli.ensure_voicevox_or_fallback")
-    def test_audio_with_speed(
-        self, mock_ensure, mock_gen_voicevox, mock_settings
-    ):
+    def test_audio_with_speed(self, mock_ensure, mock_gen_voicevox, mock_settings):
         """Test --speed is forwarded to VOICEVOX."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
@@ -213,9 +203,7 @@ class TestAudioCommand:
         mock_ensure.return_value = True
         mock_gen_voicevox.return_value = "test.mp3"
 
-        result = self.runner.invoke(
-            cli, ["audio", "テスト", "--speed", "1.0"]
-        )
+        result = self.runner.invoke(cli, ["audio", "テスト", "--speed", "1.0"])
 
         assert result.exit_code == 0
         call_kwargs = mock_gen_voicevox.call_args[1]

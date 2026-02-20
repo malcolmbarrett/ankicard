@@ -227,7 +227,9 @@ def audio_cmd(sentence, output, slow, use_gtts, speaker_id, speed):
             sentence,
             str(output),
             base_url=settings.voicevox_url,
-            speaker_id=speaker_id if speaker_id is not None else settings.voicevox_speaker_id,
+            speaker_id=speaker_id
+            if speaker_id is not None
+            else settings.voicevox_speaker_id,
             speed=speed if speed is not None else 0.95,
         )
     else:
@@ -430,13 +432,13 @@ def generate(
                     sentence,
                     audio_output,
                     base_url=settings.voicevox_url,
-                    speaker_id=speaker_id if speaker_id is not None else settings.voicevox_speaker_id,
+                    speaker_id=speaker_id
+                    if speaker_id is not None
+                    else settings.voicevox_speaker_id,
                     speed=speed if speed is not None else 0.95,
                 )
             else:
-                final_audio_path = audio.generate_audio(
-                    sentence, audio_output
-                )
+                final_audio_path = audio.generate_audio(sentence, audio_output)
 
     # Image
     final_image_path = None

@@ -122,9 +122,7 @@ def generate_audio_voicevox(
         Exception: If audio generation fails
     """
     if not is_ffmpeg_available():
-        raise Exception(
-            "ffmpeg is not installed. Install it with: brew install ffmpeg"
-        )
+        raise Exception("ffmpeg is not installed. Install it with: brew install ffmpeg")
 
     try:
         dirname = os.path.dirname(output_path)
@@ -173,9 +171,7 @@ def generate_audio_voicevox(
                 text=True,
             )
             if result.returncode != 0:
-                raise RuntimeError(
-                    f"ffmpeg conversion failed: {result.stderr}"
-                )
+                raise RuntimeError(f"ffmpeg conversion failed: {result.stderr}")
         finally:
             os.unlink(tmp_wav_path)
 

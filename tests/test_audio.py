@@ -81,18 +81,14 @@ class TestIsVoicevoxAvailable:
         """Test returns True when VOICEVOX is running."""
         mock_get.return_value = Mock(status_code=200)
         assert is_voicevox_available() is True
-        mock_get.assert_called_once_with(
-            "http://127.0.0.1:50021/version", timeout=2
-        )
+        mock_get.assert_called_once_with("http://127.0.0.1:50021/version", timeout=2)
 
     @patch("ankicard.core.audio.requests.get")
     def test_voicevox_available_custom_url(self, mock_get):
         """Test with custom base URL."""
         mock_get.return_value = Mock(status_code=200)
         assert is_voicevox_available("http://localhost:50121") is True
-        mock_get.assert_called_once_with(
-            "http://localhost:50121/version", timeout=2
-        )
+        mock_get.assert_called_once_with("http://localhost:50121/version", timeout=2)
 
     @patch("ankicard.core.audio.requests.get")
     def test_voicevox_not_available_connection_error(self, mock_get):
@@ -275,8 +271,13 @@ class TestGenerateAudioVoicevox:
     @patch("ankicard.core.audio.requests.post")
     @patch("ankicard.core.audio.tempfile.NamedTemporaryFile")
     def test_generate_audio_voicevox_success(
-        self, mock_tmpfile, mock_post, mock_subproc_run, mock_unlink,
-        _mock_ffmpeg, test_audio_path
+        self,
+        mock_tmpfile,
+        mock_post,
+        mock_subproc_run,
+        mock_unlink,
+        _mock_ffmpeg,
+        test_audio_path,
     ):
         """Test successful VOICEVOX TTS generation."""
         # Mock tempfile
@@ -317,8 +318,13 @@ class TestGenerateAudioVoicevox:
     @patch("ankicard.core.audio.requests.post")
     @patch("ankicard.core.audio.tempfile.NamedTemporaryFile")
     def test_generate_audio_voicevox_custom_params(
-        self, mock_tmpfile, mock_post, mock_subproc_run, mock_unlink,
-        _mock_ffmpeg, test_audio_path
+        self,
+        mock_tmpfile,
+        mock_post,
+        mock_subproc_run,
+        mock_unlink,
+        _mock_ffmpeg,
+        test_audio_path,
     ):
         """Test VOICEVOX with custom speaker and speed."""
         mock_tmp = Mock()
@@ -339,9 +345,7 @@ class TestGenerateAudioVoicevox:
         mock_post.side_effect = [mock_query_response, mock_synth_response]
         mock_subproc_run.return_value = Mock(returncode=0)
 
-        generate_audio_voicevox(
-            "テスト", test_audio_path, speaker_id=2, speed=1.0
-        )
+        generate_audio_voicevox("テスト", test_audio_path, speaker_id=2, speed=1.0)
 
         # Verify audio_query call used correct speaker
         query_call = mock_post.call_args_list[0]
@@ -366,8 +370,13 @@ class TestGenerateAudioVoicevox:
     @patch("ankicard.core.audio.requests.post")
     @patch("ankicard.core.audio.tempfile.NamedTemporaryFile")
     def test_generate_audio_voicevox_applies_learner_settings(
-        self, mock_tmpfile, mock_post, mock_subproc_run, mock_unlink,
-        _mock_ffmpeg, test_audio_path
+        self,
+        mock_tmpfile,
+        mock_post,
+        mock_subproc_run,
+        mock_unlink,
+        _mock_ffmpeg,
+        test_audio_path,
     ):
         """Test that learner-friendly audio query settings are applied."""
         mock_tmp = Mock()
@@ -406,8 +415,14 @@ class TestGenerateAudioVoicevox:
     @patch("ankicard.core.audio.tempfile.NamedTemporaryFile")
     @patch("ankicard.core.audio.os.makedirs")
     def test_generate_audio_voicevox_creates_directory(
-        self, mock_makedirs, mock_tmpfile, mock_post, mock_subproc_run, mock_unlink,
-        _mock_ffmpeg, tmp_path,
+        self,
+        mock_makedirs,
+        mock_tmpfile,
+        mock_post,
+        mock_subproc_run,
+        mock_unlink,
+        _mock_ffmpeg,
+        tmp_path,
     ):
         """Test that output directory is created if it doesn't exist."""
         nested_path = tmp_path / "nested" / "dir" / "audio.mp3"
@@ -439,8 +454,13 @@ class TestGenerateAudioVoicevox:
     @patch("ankicard.core.audio.requests.post")
     @patch("ankicard.core.audio.tempfile.NamedTemporaryFile")
     def test_generate_audio_voicevox_ffmpeg_fails(
-        self, mock_tmpfile, mock_post, mock_subproc_run, mock_unlink,
-        _mock_ffmpeg, test_audio_path
+        self,
+        mock_tmpfile,
+        mock_post,
+        mock_subproc_run,
+        mock_unlink,
+        _mock_ffmpeg,
+        test_audio_path,
     ):
         """Test error handling when ffmpeg conversion fails."""
         mock_tmp = Mock()
