@@ -80,12 +80,15 @@ class TestAudioCommand:
 
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio")
-    def test_audio_basic(self, mock_generate_audio, mock_settings):
-        """Test basic audio command with gTTS."""
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_audio_basic_gtts_fallback(
+        self, mock_ensure, mock_generate_audio, mock_settings
+    ):
+        """Test basic audio command falling back to gTTS."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
-        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
+        mock_ensure.return_value = False
         mock_generate_audio.return_value = "anki_media/test.mp3"
 
         result = self.runner.invoke(cli, ["audio", "こんにちは"])
@@ -95,13 +98,35 @@ class TestAudioCommand:
         mock_generate_audio.assert_called_once()
 
     @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.audio.generate_audio_voicevox")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_audio_with_voicevox(self, mock_ensure, mock_gen_voicevox, mock_settings):
+        """Test audio command using VOICEVOX."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.voicevox_url = "http://127.0.0.1:50021"
+        mock_settings_instance.voicevox_speaker_id = 13
+        mock_settings.load.return_value = mock_settings_instance
+        mock_ensure.return_value = True
+        mock_gen_voicevox.return_value = "anki_media/test.mp3"
+
+        result = self.runner.invoke(cli, ["audio", "こんにちは"])
+
+        assert result.exit_code == 0
+        assert "Generated audio:" in result.output
+        mock_gen_voicevox.assert_called_once()
+
+    @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio")
-    def test_audio_with_output_option(self, mock_generate_audio, mock_settings):
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_audio_with_output_option(
+        self, mock_ensure, mock_generate_audio, mock_settings
+    ):
         """Test audio command with custom output."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
-        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
+        mock_ensure.return_value = False
         mock_generate_audio.return_value = "custom.mp3"
 
         result = self.runner.invoke(cli, ["audio", "テスト", "--output", "custom.mp3"])
@@ -110,49 +135,106 @@ class TestAudioCommand:
 
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.audio.generate_audio")
-    def test_audio_with_slow_flag(self, mock_generate_audio, mock_settings):
-        """Test audio command with slow flag."""
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_audio_with_slow_flag(
+        self, mock_ensure, mock_generate_audio, mock_settings
+    ):
+        """Test audio command with slow flag (gTTS)."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
-        mock_settings_instance.openai_api_key = None  # No API key, use gTTS
         mock_settings.load.return_value = mock_settings_instance
+        mock_ensure.return_value = False
         mock_generate_audio.return_value = "test.mp3"
 
         result = self.runner.invoke(cli, ["audio", "難しい", "--slow"])
 
         assert result.exit_code == 0
-        # Check that slow=True was passed
         call_kwargs = mock_generate_audio.call_args[1]
         assert call_kwargs.get("slow") is True
 
     @patch("ankicard.cli.Settings")
-    def test_audio_enhance_requires_openai_tts(self, mock_settings):
-        """Test that --enhance-audio errors when used with --no-ai."""
+    @patch("ankicard.cli.audio.generate_audio")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_audio_use_gtts_flag(self, mock_ensure, mock_generate_audio, mock_settings):
+        """Test --use-gtts skips VOICEVOX entirely."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
-        mock_settings_instance.openai_api_key = "test-key"  # Has key but using --no-ai
         mock_settings.load.return_value = mock_settings_instance
+        mock_ensure.return_value = False
+        mock_generate_audio.return_value = "test.mp3"
 
-        result = self.runner.invoke(
-            cli, ["audio", "こんにちは", "--no-ai", "--enhance-audio"]
-        )
+        result = self.runner.invoke(cli, ["audio", "テスト", "--use-gtts"])
 
-        assert result.exit_code != 0
-        assert "Error: --enhance-audio requires OpenAI TTS" in result.output
-        assert "cannot use with --no-ai" in result.output
+        assert result.exit_code == 0
+        # ensure_voicevox_or_fallback should be called with use_gtts=True
+        mock_ensure.assert_called_once()
+        call_args = mock_ensure.call_args
+        assert call_args[0][1] is True  # use_gtts positional arg
 
     @patch("ankicard.cli.Settings")
-    def test_audio_enhance_requires_api_key(self, mock_settings):
-        """Test that --enhance-audio errors when no API key available."""
+    @patch("ankicard.cli.audio.generate_audio_voicevox")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_audio_with_speaker_id(self, mock_ensure, mock_gen_voicevox, mock_settings):
+        """Test --speaker-id is forwarded to VOICEVOX."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
-        mock_settings_instance.openai_api_key = None  # No API key
+        mock_settings_instance.voicevox_url = "http://127.0.0.1:50021"
+        mock_settings_instance.voicevox_speaker_id = 13
         mock_settings.load.return_value = mock_settings_instance
+        mock_ensure.return_value = True
+        mock_gen_voicevox.return_value = "test.mp3"
 
-        result = self.runner.invoke(cli, ["audio", "こんにちは", "--enhance-audio"])
+        result = self.runner.invoke(cli, ["audio", "テスト", "--speaker-id", "2"])
 
-        assert result.exit_code != 0
-        assert "Error: --enhance-audio requires OpenAI API key" in result.output
+        assert result.exit_code == 0
+        call_kwargs = mock_gen_voicevox.call_args[1]
+        assert call_kwargs["speaker_id"] == 2
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.audio.generate_audio_voicevox")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_audio_with_speed(self, mock_ensure, mock_gen_voicevox, mock_settings):
+        """Test --speed is forwarded to VOICEVOX."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.voicevox_url = "http://127.0.0.1:50021"
+        mock_settings_instance.voicevox_speaker_id = 13
+        mock_settings.load.return_value = mock_settings_instance
+        mock_ensure.return_value = True
+        mock_gen_voicevox.return_value = "test.mp3"
+
+        result = self.runner.invoke(cli, ["audio", "テスト", "--speed", "1.0"])
+
+        assert result.exit_code == 0
+        call_kwargs = mock_gen_voicevox.call_args[1]
+        assert call_kwargs["speed"] == 1.0
+
+
+class TestEnsureVoicevoxOrFallback:
+    """Tests for ensure_voicevox_or_fallback helper."""
+
+    def setup_method(self):
+        self.runner = CliRunner()
+
+    @patch("ankicard.cli.Settings")
+    @patch("ankicard.cli.audio.generate_audio")
+    @patch("ankicard.cli.audio.is_voicevox_available", return_value=False)
+    @patch("ankicard.cli.audio.is_docker_running", return_value=False)
+    def test_docker_not_running_falls_back_to_gtts(
+        self, _mock_docker, _mock_available, mock_gen_audio, mock_settings
+    ):
+        """Test that Docker not running shows error and falls back to gTTS."""
+        mock_settings_instance = Mock()
+        mock_settings_instance.media_dir = "anki_media"
+        mock_settings_instance.voicevox_url = "http://127.0.0.1:50021"
+        mock_settings.load.return_value = mock_settings_instance
+        mock_gen_audio.return_value = "test.mp3"
+
+        result = self.runner.invoke(cli, ["audio", "テスト"])
+
+        assert result.exit_code == 0
+        assert "Docker is not running" in result.output
+        mock_gen_audio.assert_called_once()
 
 
 class TestImageCommand:
@@ -207,8 +289,10 @@ class TestGenerateCommand:
     @patch("ankicard.cli.export_package")
     @patch("ankicard.cli.generate_unique_id")
     @patch("ankicard.cli.generate_media_filenames")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
     def test_generate_basic(
         self,
+        mock_ensure,
         mock_gen_filenames,
         mock_gen_id,
         mock_export,
@@ -219,8 +303,7 @@ class TestGenerateCommand:
         mock_translate,
         mock_settings,
     ):
-        """Test basic generate command."""
-        # Setup mocks
+        """Test basic generate command with gTTS fallback."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
@@ -229,6 +312,7 @@ class TestGenerateCommand:
         mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
+        mock_ensure.return_value = False
         mock_gen_id.return_value = "abc123"
         mock_gen_filenames.return_value = {"audio": "test.mp3", "image": "test.jpg"}
         mock_translate.return_value = "test"
@@ -292,58 +376,111 @@ class TestGenerateCommand:
         )
 
         assert result.exit_code == 0
-        # Audio generation should not be called
         mock_gen_audio.assert_not_called()
 
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
-    def test_generate_enhance_audio_requires_openai_tts(
-        self, mock_get_furigana, mock_translate, mock_settings
+    @patch("ankicard.cli.audio.generate_audio_voicevox")
+    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_note")
+    @patch("ankicard.cli.export_package")
+    @patch("ankicard.cli.generate_unique_id")
+    @patch("ankicard.cli.generate_media_filenames")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_generate_with_voicevox(
+        self,
+        mock_ensure,
+        mock_gen_filenames,
+        mock_gen_id,
+        mock_export,
+        mock_create_note,
+        mock_create_deck,
+        mock_gen_voicevox,
+        mock_get_furigana,
+        mock_translate,
+        mock_settings,
     ):
-        """Test that --enhance-audio errors with --no-ai-audio."""
+        """Test generate command using VOICEVOX."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
-        mock_settings_instance.openai_api_key = "test-key"
-        mock_settings_instance.deck_name = "Test"
+        mock_settings_instance.openai_api_key = None
+        mock_settings_instance.voicevox_url = "http://127.0.0.1:50021"
+        mock_settings_instance.voicevox_speaker_id = 13
+        mock_settings_instance.deck_name = "Test Deck"
         mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
+        mock_ensure.return_value = True
+        mock_gen_id.return_value = "abc123"
+        mock_gen_filenames.return_value = {"audio": "test.mp3", "image": "test.jpg"}
         mock_translate.return_value = "test"
         mock_get_furigana.return_value = "テスト"
+        mock_gen_voicevox.return_value = "anki_media/test.mp3"
 
-        result = self.runner.invoke(
-            cli, ["generate", "こんにちは", "--no-ai-audio", "--enhance-audio"]
-        )
+        mock_deck = Mock()
+        mock_create_deck.return_value = mock_deck
+        mock_note = Mock()
+        mock_create_note.return_value = mock_note
 
-        assert result.exit_code != 0
-        assert "Error: --enhance-audio requires OpenAI TTS" in result.output
-        assert "cannot use with --no-ai-audio" in result.output
+        result = self.runner.invoke(cli, ["generate", "テスト", "--no-image"])
+
+        assert result.exit_code == 0
+        mock_gen_voicevox.assert_called_once()
 
     @patch("ankicard.cli.Settings")
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
-    def test_generate_enhance_audio_requires_api_key(
-        self, mock_get_furigana, mock_translate, mock_settings
+    @patch("ankicard.cli.audio.generate_audio")
+    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_note")
+    @patch("ankicard.cli.export_package")
+    @patch("ankicard.cli.generate_unique_id")
+    @patch("ankicard.cli.generate_media_filenames")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
+    def test_generate_use_gtts_flag(
+        self,
+        mock_ensure,
+        mock_gen_filenames,
+        mock_gen_id,
+        mock_export,
+        mock_create_note,
+        mock_create_deck,
+        mock_gen_audio,
+        mock_get_furigana,
+        mock_translate,
+        mock_settings,
     ):
-        """Test that --enhance-audio errors without API key."""
+        """Test --use-gtts flag skips VOICEVOX."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
-        mock_settings_instance.openai_api_key = None  # No API key
-        mock_settings_instance.deck_name = "Test"
+        mock_settings_instance.openai_api_key = None
+        mock_settings_instance.deck_name = "Test Deck"
         mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
+        mock_ensure.return_value = False
+        mock_gen_id.return_value = "abc123"
+        mock_gen_filenames.return_value = {"audio": "test.mp3", "image": "test.jpg"}
         mock_translate.return_value = "test"
         mock_get_furigana.return_value = "テスト"
+        mock_gen_audio.return_value = "test.mp3"
 
-        result = self.runner.invoke(cli, ["generate", "こんにちは", "--enhance-audio"])
+        mock_deck = Mock()
+        mock_create_deck.return_value = mock_deck
+        mock_note = Mock()
+        mock_create_note.return_value = mock_note
 
-        assert result.exit_code != 0
-        assert "Error: --enhance-audio requires OpenAI TTS" in result.output
-        assert "without API key" in result.output
+        result = self.runner.invoke(
+            cli, ["generate", "テスト", "--no-image", "--use-gtts"]
+        )
+
+        assert result.exit_code == 0
+        mock_ensure.assert_called_once()
+        call_args = mock_ensure.call_args
+        assert call_args[0][1] is True  # use_gtts
 
 
 class TestTranscribeCommand:
@@ -431,7 +568,6 @@ class TestTranscribeCommand:
 
             assert result.exit_code == 0
             assert "Saved transcription to: out.txt" in result.output
-            # Check file was created
             assert Path("out.txt").exists()
 
 
@@ -451,8 +587,10 @@ class TestGenerateWithAudio:
     @patch("ankicard.cli.audio.generate_audio")
     @patch("ankicard.cli.generate_unique_id")
     @patch("ankicard.cli.generate_media_filenames")
+    @patch("ankicard.cli.ensure_voicevox_or_fallback")
     def test_generate_from_audio(
         self,
+        mock_ensure,
         mock_gen_filenames,
         mock_gen_id,
         mock_gen_audio,
@@ -473,6 +611,7 @@ class TestGenerateWithAudio:
         mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
+        mock_ensure.return_value = False
         mock_gen_id.return_value = "abc123"
         mock_gen_filenames.return_value = {"audio": "test.mp3", "image": "test.jpg"}
         mock_transcribe.return_value = "日本語のテスト"
@@ -491,7 +630,7 @@ class TestGenerateWithAudio:
             Path("test.mp3").write_bytes(b"fake audio")
             result = self.runner.invoke(
                 cli,
-                ["generate", "--from-audio", "test.mp3", "--no-image", "--no-ai-audio"],
+                ["generate", "--from-audio", "test.mp3", "--no-image", "--use-gtts"],
             )
 
         assert result.exit_code == 0
