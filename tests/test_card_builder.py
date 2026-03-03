@@ -1,7 +1,18 @@
 from unittest.mock import Mock, patch
 import genanki
-from ankicard.anki.card_builder import create_note, create_deck, export_package
-from ankicard.anki.models import IMMERSION_KIT_MODEL
+from ankicard.anki.card_builder import (
+    create_note,
+    create_deck,
+    create_all_decks,
+    export_package,
+)
+from ankicard.anki.models import (
+    IMMERSION_KIT_MODEL,
+    DECK_ID_SENTENCES,
+    DECK_ID_VOCAB,
+    DECK_ID_KANJI,
+    DECK_ID_GRAMMAR,
+)
 
 
 class TestCreateNote:
@@ -52,7 +63,9 @@ class TestCreateNote:
             unique_id="123",
         )
 
-        assert len(note.fields) == 6
+        assert len(note.fields) == 39
+        # First 6 fields are populated, remaining 33 are empty padding
+        assert all(f == "" for f in note.fields[6:])
 
 
 class TestCreateDeck:
@@ -63,15 +76,15 @@ class TestCreateDeck:
         deck = create_deck()
 
         assert isinstance(deck, genanki.Deck)
-        assert deck.deck_id == 2137715748  # Official Immersion Kit deck ID
-        assert deck.name == "Immersion Kit"
+        assert deck.deck_id == 1770225251447
+        assert deck.name == "Immersion Kit::Sentences"
 
     def test_create_deck_custom_name(self):
         """Test creating a deck with custom name."""
         deck = create_deck(deck_name="My Custom Deck")
 
         assert deck.name == "My Custom Deck"
-        assert deck.deck_id == 2137715748  # Official Immersion Kit deck ID
+        assert deck.deck_id == 1770225251447
 
     def test_create_deck_custom_id(self):
         """Test creating a deck with custom ID."""
@@ -88,6 +101,31 @@ class TestCreateDeck:
 
         assert deck.deck_id == custom_id
         assert deck.name == custom_name
+
+
+class TestCreateAllDecks:
+    """Tests for creating all subdecks."""
+
+    def test_creates_four_decks(self):
+        """Test that create_all_decks returns 4 decks."""
+        decks = create_all_decks()
+        assert len(decks) == 4
+
+    def test_deck_ids(self):
+        """Test that decks have correct IDs."""
+        decks = create_all_decks()
+        assert decks[0].deck_id == DECK_ID_SENTENCES
+        assert decks[1].deck_id == DECK_ID_VOCAB
+        assert decks[2].deck_id == DECK_ID_KANJI
+        assert decks[3].deck_id == DECK_ID_GRAMMAR
+
+    def test_deck_names(self):
+        """Test that decks have correct names."""
+        decks = create_all_decks()
+        assert decks[0].name == "Immersion Kit::Sentences"
+        assert decks[1].name == "Immersion Kit::Components::Vocab"
+        assert decks[2].name == "Immersion Kit::Components::Kanji"
+        assert decks[3].name == "Immersion Kit::Components::Grammar"
 
 
 class TestExportPackage:
@@ -136,3 +174,17 @@ class TestExportPackage:
         export_package(deck, media_files, output_path)
 
         assert mock_package.media_files == media_files
+
+    @patch("ankicard.anki.card_builder.genanki.Package")
+    def test_export_package_with_deck_list(self, mock_package_class, tmp_path):
+        """Test exporting package with a list of decks."""
+        mock_package = Mock()
+        mock_package_class.return_value = mock_package
+
+        decks = create_all_decks()
+        output_path = str(tmp_path / "test.apkg")
+
+        export_package(decks, [], output_path)
+
+        mock_package_class.assert_called_once_with(decks)
+        mock_package.write_to_file.assert_called_once_with(output_path)

@@ -12,6 +12,8 @@ class Settings:
     voicevox_speaker_id: int = 13
     deck_id: int = 2059400110
     deck_name: str = "Immersion Kit"
+    voicevox_url: str = "http://127.0.0.1:50021"
+    voicevox_speaker_id: int = 13
 
     @classmethod
     def load(cls) -> "Settings":

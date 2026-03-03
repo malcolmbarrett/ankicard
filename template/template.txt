@@ -1,76 +1,28 @@
-import genanki
+================================================================================
+IMMERSION KIT SENTENCE — ANKI TEMPLATES
+================================================================================
 
-# Template and CSS content sourced from template/template.txt
-# Field names verified against the Anki database
+Note Type: Immersion Kit Sentence
+Cards: 10 total (1 Sentence + 3 Vocab + 3 Kanji + 3 Grammar)
 
-# Deck IDs matching user's Anki deck structure
-DECK_ID_SENTENCES = 1770225251447
-DECK_ID_VOCAB = 1770227342171
-DECK_ID_KANJI = 1770227373584
-DECK_ID_GRAMMAR = 1770227398103
 
-IMMERSION_KIT_MODEL = genanki.Model(
-    1239585222,  # Official Immersion Kit model ID (must match for card compatibility)
-    "Immersion Kit Sentence",
-    fields=[
-        # Core sentence fields (6)
-        {"name": "Expression"},
-        {"name": "English"},
-        {"name": "Reading"},
-        {"name": "Screenshot"},
-        {"name": "Audio Sentence"},
-        {"name": "ID"},
-        # Vocab fields (3 groups x 4 = 12)
-        {"name": "Vocab1"},
-        {"name": "VocabReading1"},
-        {"name": "VocabMeaning1"},
-        {"name": "VocabTyping1"},
-        {"name": "Vocab2"},
-        {"name": "VocabReading2"},
-        {"name": "VocabMeaning2"},
-        {"name": "VocabTyping2"},
-        {"name": "Vocab3"},
-        {"name": "VocabReading3"},
-        {"name": "VocabMeaning3"},
-        {"name": "VocabTyping3"},
-        # Kanji fields (3 groups x 3 = 9)
-        {"name": "Kanji1"},
-        {"name": "KanjiReading1"},
-        {"name": "KanjiMeaning1"},
-        {"name": "Kanji2"},
-        {"name": "KanjiReading2"},
-        {"name": "KanjiMeaning2"},
-        {"name": "Kanji3"},
-        {"name": "KanjiReading3"},
-        {"name": "KanjiMeaning3"},
-        # Grammar fields (3 groups x 4 = 12)
-        {"name": "Grammar1"},
-        {"name": "GrammarStructure1"},
-        {"name": "GrammarMeaning1"},
-        {"name": "BunproLink1"},
-        {"name": "Grammar2"},
-        {"name": "GrammarStructure2"},
-        {"name": "GrammarMeaning2"},
-        {"name": "BunproLink2"},
-        {"name": "Grammar3"},
-        {"name": "GrammarStructure3"},
-        {"name": "GrammarMeaning3"},
-        {"name": "BunproLink3"},
-    ],
-    templates=[
-        # Card 1: Sentence
-        {
-            "name": "Sentence",
-            "did": DECK_ID_SENTENCES,
-            "qfmt": """\
+================================================================================
+CARD 1: SENTENCE
+================================================================================
+
+--- FRONT TEMPLATE ---
+
 <div class="card-type-tag tag-sentence">Sentence</div>
 
 {{#Screenshot}}
 <div class="screenshot">{{Screenshot}}</div>
 {{/Screenshot}}
 
-<div class="expression">{{Expression}}</div>""",
-            "afmt": """\
+<div class="expression">{{Expression}}</div>
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-sentence">Sentence</div>
 
 {{#Screenshot}}
@@ -89,31 +41,34 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 <!-- Vocab hints -->
 {{#Vocab1}}
-<div class="vocab-hint">\U0001f4dd {{Vocab1}} \u2014 {{VocabMeaning1}}</div>
+<div class="vocab-hint">📝 {{Vocab1}} — {{VocabMeaning1}}</div>
 {{/Vocab1}}
 {{#Vocab2}}
-<div class="vocab-hint">\U0001f4dd {{Vocab2}} \u2014 {{VocabMeaning2}}</div>
+<div class="vocab-hint">📝 {{Vocab2}} — {{VocabMeaning2}}</div>
 {{/Vocab2}}
 {{#Vocab3}}
-<div class="vocab-hint">\U0001f4dd {{Vocab3}} \u2014 {{VocabMeaning3}}</div>
+<div class="vocab-hint">📝 {{Vocab3}} — {{VocabMeaning3}}</div>
 {{/Vocab3}}
 
 <!-- Grammar hints -->
 {{#Grammar1}}
-<div class="grammar-hint">\u6587 {{Grammar1}} \u2014 {{GrammarMeaning1}}</div>
+<div class="grammar-hint">文 {{Grammar1}} — {{GrammarMeaning1}}</div>
 {{/Grammar1}}
 {{#Grammar2}}
-<div class="grammar-hint">\u6587 {{Grammar2}} \u2014 {{GrammarMeaning2}}</div>
+<div class="grammar-hint">文 {{Grammar2}} — {{GrammarMeaning2}}</div>
 {{/Grammar2}}
 {{#Grammar3}}
-<div class="grammar-hint">\u6587 {{Grammar3}} \u2014 {{GrammarMeaning3}}</div>
-{{/Grammar3}}""",
-        },
-        # Card 2: Vocab 1
-        {
-            "name": "Vocab 1",
-            "did": DECK_ID_VOCAB,
-            "qfmt": """\
+<div class="grammar-hint">文 {{Grammar3}} — {{GrammarMeaning3}}</div>
+{{/Grammar3}}
+
+
+================================================================================
+CARD 2: VOCAB SLOT 1
+================================================================================
+Deck Override: Immersion Kit::Components::Vocab
+
+--- FRONT TEMPLATE ---
+
 {{#Vocab1}}
 <div class="card-type-tag tag-vocab">Vocab</div>
 
@@ -122,8 +77,11 @@ IMMERSION_KIT_MODEL = genanki.Model(
 <div class="context-sentence">{{Expression}}</div>
 
 {{type:VocabTyping1}}
-{{/Vocab1}}""",
-            "afmt": """\
+{{/Vocab1}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-vocab">Vocab</div>
 
 <div class="vocab-word">{{Vocab1}}</div>
@@ -140,13 +98,16 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 {{#Audio Sentence}}
 <div class="audio">{{Audio Sentence}}</div>
-{{/Audio Sentence}}""",
-        },
-        # Card 3: Vocab 2
-        {
-            "name": "Vocab 2",
-            "did": DECK_ID_VOCAB,
-            "qfmt": """\
+{{/Audio Sentence}}
+
+
+================================================================================
+CARD 3: VOCAB SLOT 2
+================================================================================
+Deck Override: Immersion Kit::Components::Vocab
+
+--- FRONT TEMPLATE ---
+
 {{#Vocab2}}
 <div class="card-type-tag tag-vocab">Vocab</div>
 
@@ -155,8 +116,11 @@ IMMERSION_KIT_MODEL = genanki.Model(
 <div class="context-sentence">{{Expression}}</div>
 
 {{type:VocabTyping2}}
-{{/Vocab2}}""",
-            "afmt": """\
+{{/Vocab2}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-vocab">Vocab</div>
 
 <div class="vocab-word">{{Vocab2}}</div>
@@ -173,13 +137,16 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 {{#Audio Sentence}}
 <div class="audio">{{Audio Sentence}}</div>
-{{/Audio Sentence}}""",
-        },
-        # Card 4: Vocab 3
-        {
-            "name": "Vocab 3",
-            "did": DECK_ID_VOCAB,
-            "qfmt": """\
+{{/Audio Sentence}}
+
+
+================================================================================
+CARD 4: VOCAB SLOT 3
+================================================================================
+Deck Override: Immersion Kit::Components::Vocab
+
+--- FRONT TEMPLATE ---
+
 {{#Vocab3}}
 <div class="card-type-tag tag-vocab">Vocab</div>
 
@@ -188,8 +155,11 @@ IMMERSION_KIT_MODEL = genanki.Model(
 <div class="context-sentence">{{Expression}}</div>
 
 {{type:VocabTyping3}}
-{{/Vocab3}}""",
-            "afmt": """\
+{{/Vocab3}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-vocab">Vocab</div>
 
 <div class="vocab-word">{{Vocab3}}</div>
@@ -206,21 +176,27 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 {{#Audio Sentence}}
 <div class="audio">{{Audio Sentence}}</div>
-{{/Audio Sentence}}""",
-        },
-        # Card 5: Kanji 1
-        {
-            "name": "Kanji 1",
-            "did": DECK_ID_KANJI,
-            "qfmt": """\
+{{/Audio Sentence}}
+
+
+================================================================================
+CARD 5: KANJI SLOT 1
+================================================================================
+Deck Override: Immersion Kit::Components::Kanji
+
+--- FRONT TEMPLATE ---
+
 {{#Kanji1}}
 <div class="card-type-tag tag-kanji">Kanji</div>
 
 <div class="kanji-char">{{Kanji1}}</div>
 
 {{type:KanjiReading1}}
-{{/Kanji1}}""",
-            "afmt": """\
+{{/Kanji1}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-kanji">Kanji</div>
 
 <div class="kanji-char">{{Kanji1}}</div>
@@ -232,21 +208,27 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 <hr class="divider">
 
-<div class="context-sentence">{{Expression}}</div>""",
-        },
-        # Card 6: Kanji 2
-        {
-            "name": "Kanji 2",
-            "did": DECK_ID_KANJI,
-            "qfmt": """\
+<div class="context-sentence">{{Expression}}</div>
+
+
+================================================================================
+CARD 6: KANJI SLOT 2
+================================================================================
+Deck Override: Immersion Kit::Components::Kanji
+
+--- FRONT TEMPLATE ---
+
 {{#Kanji2}}
 <div class="card-type-tag tag-kanji">Kanji</div>
 
 <div class="kanji-char">{{Kanji2}}</div>
 
 {{type:KanjiReading2}}
-{{/Kanji2}}""",
-            "afmt": """\
+{{/Kanji2}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-kanji">Kanji</div>
 
 <div class="kanji-char">{{Kanji2}}</div>
@@ -258,21 +240,27 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 <hr class="divider">
 
-<div class="context-sentence">{{Expression}}</div>""",
-        },
-        # Card 7: Kanji 3
-        {
-            "name": "Kanji 3",
-            "did": DECK_ID_KANJI,
-            "qfmt": """\
+<div class="context-sentence">{{Expression}}</div>
+
+
+================================================================================
+CARD 7: KANJI SLOT 3
+================================================================================
+Deck Override: Immersion Kit::Components::Kanji
+
+--- FRONT TEMPLATE ---
+
 {{#Kanji3}}
 <div class="card-type-tag tag-kanji">Kanji</div>
 
 <div class="kanji-char">{{Kanji3}}</div>
 
 {{type:KanjiReading3}}
-{{/Kanji3}}""",
-            "afmt": """\
+{{/Kanji3}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-kanji">Kanji</div>
 
 <div class="kanji-char">{{Kanji3}}</div>
@@ -284,21 +272,27 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 <hr class="divider">
 
-<div class="context-sentence">{{Expression}}</div>""",
-        },
-        # Card 8: Grammar 1
-        {
-            "name": "Grammar 1",
-            "did": DECK_ID_GRAMMAR,
-            "qfmt": """\
+<div class="context-sentence">{{Expression}}</div>
+
+
+================================================================================
+CARD 8: GRAMMAR SLOT 1
+================================================================================
+Deck Override: Immersion Kit::Components::Grammar
+
+--- FRONT TEMPLATE ---
+
 {{#Grammar1}}
 <div class="card-type-tag tag-grammar">Grammar</div>
 
 <div class="grammar-point">{{Grammar1}}</div>
 
 <div class="context-sentence">{{Expression}}</div>
-{{/Grammar1}}""",
-            "afmt": """\
+{{/Grammar1}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-grammar">Grammar</div>
 
 <div class="grammar-point">{{Grammar1}}</div>
@@ -306,7 +300,7 @@ IMMERSION_KIT_MODEL = genanki.Model(
 <div class="grammar-explanation">{{GrammarMeaning1}}</div>
 
 {{#BunproLink1}}
-<a href="{{BunproLink1}}" class="bunpro-link">View on Bunpro \u2197</a>
+<a href="{{BunproLink1}}" class="bunpro-link">View on Bunpro ↗</a>
 {{/BunproLink1}}
 
 <hr class="divider">
@@ -316,21 +310,27 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 {{#Audio Sentence}}
 <div class="audio">{{Audio Sentence}}</div>
-{{/Audio Sentence}}""",
-        },
-        # Card 9: Grammar 2
-        {
-            "name": "Grammar 2",
-            "did": DECK_ID_GRAMMAR,
-            "qfmt": """\
+{{/Audio Sentence}}
+
+
+================================================================================
+CARD 9: GRAMMAR SLOT 2
+================================================================================
+Deck Override: Immersion Kit::Components::Grammar
+
+--- FRONT TEMPLATE ---
+
 {{#Grammar2}}
 <div class="card-type-tag tag-grammar">Grammar</div>
 
 <div class="grammar-point">{{Grammar2}}</div>
 
 <div class="context-sentence">{{Expression}}</div>
-{{/Grammar2}}""",
-            "afmt": """\
+{{/Grammar2}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-grammar">Grammar</div>
 
 <div class="grammar-point">{{Grammar2}}</div>
@@ -338,7 +338,7 @@ IMMERSION_KIT_MODEL = genanki.Model(
 <div class="grammar-explanation">{{GrammarMeaning2}}</div>
 
 {{#BunproLink2}}
-<a href="{{BunproLink2}}" class="bunpro-link">View on Bunpro \u2197</a>
+<a href="{{BunproLink2}}" class="bunpro-link">View on Bunpro ↗</a>
 {{/BunproLink2}}
 
 <hr class="divider">
@@ -348,21 +348,27 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 {{#Audio Sentence}}
 <div class="audio">{{Audio Sentence}}</div>
-{{/Audio Sentence}}""",
-        },
-        # Card 10: Grammar 3
-        {
-            "name": "Grammar 3",
-            "did": DECK_ID_GRAMMAR,
-            "qfmt": """\
+{{/Audio Sentence}}
+
+
+================================================================================
+CARD 10: GRAMMAR SLOT 3
+================================================================================
+Deck Override: Immersion Kit::Components::Grammar
+
+--- FRONT TEMPLATE ---
+
 {{#Grammar3}}
 <div class="card-type-tag tag-grammar">Grammar</div>
 
 <div class="grammar-point">{{Grammar3}}</div>
 
 <div class="context-sentence">{{Expression}}</div>
-{{/Grammar3}}""",
-            "afmt": """\
+{{/Grammar3}}
+
+
+--- BACK TEMPLATE ---
+
 <div class="card-type-tag tag-grammar">Grammar</div>
 
 <div class="grammar-point">{{Grammar3}}</div>
@@ -370,7 +376,7 @@ IMMERSION_KIT_MODEL = genanki.Model(
 <div class="grammar-explanation">{{GrammarMeaning3}}</div>
 
 {{#BunproLink3}}
-<a href="{{BunproLink3}}" class="bunpro-link">View on Bunpro \u2197</a>
+<a href="{{BunproLink3}}" class="bunpro-link">View on Bunpro ↗</a>
 {{/BunproLink3}}
 
 <hr class="divider">
@@ -380,10 +386,13 @@ IMMERSION_KIT_MODEL = genanki.Model(
 
 {{#Audio Sentence}}
 <div class="audio">{{Audio Sentence}}</div>
-{{/Audio Sentence}}""",
-        },
-    ],
-    css="""\
+{{/Audio Sentence}}
+
+
+================================================================================
+STYLING (CSS) — Paste into the Styling section
+================================================================================
+
 /* ── Base ── */
 .card {
   font-family: "Hiragino Kaku Gothic Pro", "Meiryo", "Noto Sans JP", sans-serif;
@@ -627,5 +636,85 @@ ruby rt {
 .mobile .expression    { font-size: 22px; }
 .mobile .vocab-word    { font-size: 40px; }
 .mobile .kanji-char    { font-size: 72px; }
-.mobile .grammar-point { font-size: 32px; }""",
-)
+.mobile .grammar-point { font-size: 32px; }
+
+
+
+
+================================================================================
+FIELDS (33 total)
+================================================================================
+
+ORIGINAL IMMERSION KIT FIELDS (7):
+- Expression
+- Reading
+- Screenshot
+- Audio Sentence
+- English
+- Content Source (id)
+- Content Source (name)
+
+VOCAB SLOT 1 (4 new):
+- Vocab1
+- VocabReading1
+- VocabMeaning1
+- VocabTyping1
+
+VOCAB SLOT 2 (4 new):
+- Vocab2
+- VocabReading2
+- VocabMeaning2
+- VocabTyping2
+
+VOCAB SLOT 3 (4 new):
+- Vocab3
+- VocabReading3
+- VocabMeaning3
+- VocabTyping3
+
+KANJI SLOT 1 (3 new):
+- Kanji1
+- KanjiReading1
+- KanjiMeaning1
+
+KANJI SLOT 2 (3 new):
+- Kanji2
+- KanjiReading2
+- KanjiMeaning2
+
+KANJI SLOT 3 (3 new):
+- Kanji3
+- KanjiReading3
+- KanjiMeaning3
+
+GRAMMAR SLOT 1 (4 new):
+- Grammar1
+- GrammarStructure1
+- GrammarMeaning1
+- BunproLink1
+
+GRAMMAR SLOT 2 (4 new):
+- Grammar2
+- GrammarStructure2
+- GrammarMeaning2
+- BunproLink2
+
+GRAMMAR SLOT 3 (4 new):
+- Grammar3
+- GrammarStructure3
+- GrammarMeaning3
+- BunproLink3
+
+
+================================================================================
+DECK STRUCTURE
+================================================================================
+
+Immersion Kit
+├── Immersion Kit::Sentences        (Card 1 — Sentence)
+└── Immersion Kit::Components
+    ├── Immersion Kit::Components::Vocab    (Cards 2-4)
+    ├── Immersion Kit::Components::Kanji    (Cards 5-7)
+    └── Immersion Kit::Components::Grammar  (Cards 8-10)
+
+Set Deck Override for each card template to route cards to the correct subdeck.

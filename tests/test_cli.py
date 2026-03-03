@@ -1,6 +1,12 @@
+import os
+from pathlib import Path
+
 from click.testing import CliRunner
 from unittest.mock import patch, Mock
 from ankicard.cli import cli
+
+
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "test_apkg")
 
 
 class TestCLI:
@@ -284,7 +290,7 @@ class TestGenerateCommand:
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
     @patch("ankicard.cli.audio.generate_audio")
-    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_all_decks")
     @patch("ankicard.cli.create_note")
     @patch("ankicard.cli.export_package")
     @patch("ankicard.cli.generate_unique_id")
@@ -297,7 +303,7 @@ class TestGenerateCommand:
         mock_gen_id,
         mock_export,
         mock_create_note,
-        mock_create_deck,
+        mock_create_all_decks,
         mock_gen_audio,
         mock_get_furigana,
         mock_translate,
@@ -308,8 +314,6 @@ class TestGenerateCommand:
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
         mock_settings_instance.openai_api_key = None
-        mock_settings_instance.deck_name = "Test Deck"
-        mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
         mock_ensure.return_value = False
@@ -320,7 +324,7 @@ class TestGenerateCommand:
         mock_gen_audio.return_value = "test.mp3"
 
         mock_deck = Mock()
-        mock_create_deck.return_value = mock_deck
+        mock_create_all_decks.return_value = [mock_deck, Mock(), Mock(), Mock()]
         mock_note = Mock()
         mock_create_note.return_value = mock_note
 
@@ -335,7 +339,7 @@ class TestGenerateCommand:
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
     @patch("ankicard.cli.audio.generate_audio")
-    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_all_decks")
     @patch("ankicard.cli.create_note")
     @patch("ankicard.cli.export_package")
     @patch("ankicard.cli.generate_unique_id")
@@ -346,7 +350,7 @@ class TestGenerateCommand:
         mock_gen_id,
         mock_export,
         mock_create_note,
-        mock_create_deck,
+        mock_create_all_decks,
         mock_gen_audio,
         mock_get_furigana,
         mock_translate,
@@ -357,8 +361,6 @@ class TestGenerateCommand:
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
         mock_settings_instance.openai_api_key = None
-        mock_settings_instance.deck_name = "Test"
-        mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
         mock_gen_id.return_value = "abc123"
@@ -367,7 +369,7 @@ class TestGenerateCommand:
         mock_get_furigana.return_value = "テスト"
 
         mock_deck = Mock()
-        mock_create_deck.return_value = mock_deck
+        mock_create_all_decks.return_value = [mock_deck, Mock(), Mock(), Mock()]
         mock_note = Mock()
         mock_create_note.return_value = mock_note
 
@@ -382,7 +384,7 @@ class TestGenerateCommand:
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
     @patch("ankicard.cli.audio.generate_audio_voicevox")
-    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_all_decks")
     @patch("ankicard.cli.create_note")
     @patch("ankicard.cli.export_package")
     @patch("ankicard.cli.generate_unique_id")
@@ -395,7 +397,7 @@ class TestGenerateCommand:
         mock_gen_id,
         mock_export,
         mock_create_note,
-        mock_create_deck,
+        mock_create_all_decks,
         mock_gen_voicevox,
         mock_get_furigana,
         mock_translate,
@@ -408,8 +410,6 @@ class TestGenerateCommand:
         mock_settings_instance.openai_api_key = None
         mock_settings_instance.voicevox_url = "http://127.0.0.1:50021"
         mock_settings_instance.voicevox_speaker_id = 13
-        mock_settings_instance.deck_name = "Test Deck"
-        mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
         mock_ensure.return_value = True
@@ -420,7 +420,7 @@ class TestGenerateCommand:
         mock_gen_voicevox.return_value = "anki_media/test.mp3"
 
         mock_deck = Mock()
-        mock_create_deck.return_value = mock_deck
+        mock_create_all_decks.return_value = [mock_deck, Mock(), Mock(), Mock()]
         mock_note = Mock()
         mock_create_note.return_value = mock_note
 
@@ -433,7 +433,7 @@ class TestGenerateCommand:
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
     @patch("ankicard.cli.audio.generate_audio")
-    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_all_decks")
     @patch("ankicard.cli.create_note")
     @patch("ankicard.cli.export_package")
     @patch("ankicard.cli.generate_unique_id")
@@ -446,7 +446,7 @@ class TestGenerateCommand:
         mock_gen_id,
         mock_export,
         mock_create_note,
-        mock_create_deck,
+        mock_create_all_decks,
         mock_gen_audio,
         mock_get_furigana,
         mock_translate,
@@ -457,8 +457,6 @@ class TestGenerateCommand:
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
         mock_settings_instance.openai_api_key = None
-        mock_settings_instance.deck_name = "Test Deck"
-        mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
         mock_ensure.return_value = False
@@ -469,7 +467,7 @@ class TestGenerateCommand:
         mock_gen_audio.return_value = "test.mp3"
 
         mock_deck = Mock()
-        mock_create_deck.return_value = mock_deck
+        mock_create_all_decks.return_value = [mock_deck, Mock(), Mock(), Mock()]
         mock_note = Mock()
         mock_create_note.return_value = mock_note
 
@@ -581,7 +579,7 @@ class TestGenerateWithAudio:
     @patch("ankicard.cli.transcription.transcribe_audio")
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
-    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_all_decks")
     @patch("ankicard.cli.create_note")
     @patch("ankicard.cli.export_package")
     @patch("ankicard.cli.audio.generate_audio")
@@ -596,7 +594,7 @@ class TestGenerateWithAudio:
         mock_gen_audio,
         mock_export,
         mock_create_note,
-        mock_create_deck,
+        mock_create_all_decks,
         mock_get_furigana,
         mock_translate,
         mock_transcribe,
@@ -607,8 +605,6 @@ class TestGenerateWithAudio:
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
         mock_settings_instance.openai_api_key = "test-key"
-        mock_settings_instance.deck_name = "Test Deck"
-        mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
         mock_ensure.return_value = False
@@ -620,7 +616,7 @@ class TestGenerateWithAudio:
         mock_gen_audio.return_value = "anki_media/test.mp3"
 
         mock_deck = Mock()
-        mock_create_deck.return_value = mock_deck
+        mock_create_all_decks.return_value = [mock_deck, Mock(), Mock(), Mock()]
         mock_note = Mock()
         mock_create_note.return_value = mock_note
 
@@ -642,7 +638,7 @@ class TestGenerateWithAudio:
     @patch("ankicard.cli.transcription.transcribe_audio")
     @patch("ankicard.cli.translation.translate_to_english")
     @patch("ankicard.cli.furigana.get_furigana")
-    @patch("ankicard.cli.create_deck")
+    @patch("ankicard.cli.create_all_decks")
     @patch("ankicard.cli.create_note")
     @patch("ankicard.cli.export_package")
     @patch("ankicard.cli.copy_media_file")
@@ -655,7 +651,7 @@ class TestGenerateWithAudio:
         mock_copy_media,
         mock_export,
         mock_create_note,
-        mock_create_deck,
+        mock_create_all_decks,
         mock_get_furigana,
         mock_translate,
         mock_transcribe,
@@ -666,8 +662,6 @@ class TestGenerateWithAudio:
         mock_settings_instance.media_dir = "anki_media"
         mock_settings_instance.output_dir = "anki_cards"
         mock_settings_instance.openai_api_key = "test-key"
-        mock_settings_instance.deck_name = "Test Deck"
-        mock_settings_instance.deck_id = 123
         mock_settings.load.return_value = mock_settings_instance
 
         mock_gen_id.return_value = "abc123"
@@ -678,7 +672,7 @@ class TestGenerateWithAudio:
         mock_copy_media.return_value = "anki_media/test.mp3"
 
         mock_deck = Mock()
-        mock_create_deck.return_value = mock_deck
+        mock_create_all_decks.return_value = [mock_deck, Mock(), Mock(), Mock()]
         mock_note = Mock()
         mock_create_note.return_value = mock_note
 
@@ -707,3 +701,148 @@ class TestGenerateWithAudio:
 
         assert result.exit_code != 0
         assert "Provide <sentence>, --from-audio, or --from-audio-zip" in result.output
+
+
+class TestProcessCommand:
+    """Tests for process command."""
+
+    def setup_method(self):
+        self.runner = CliRunner()
+        # Patch cache to use a temp file so tests don't interfere
+        import tempfile
+
+        self._cache_dir = tempfile.mkdtemp()
+        self._cache_patcher_dir = patch(
+            "ankicard.config.cache.CACHE_DIR", Path(self._cache_dir)
+        )
+        self._cache_patcher_file = patch(
+            "ankicard.config.cache.CACHE_FILE",
+            Path(self._cache_dir) / "cache.json",
+        )
+        self._cache_patcher_dir.start()
+        self._cache_patcher_file.start()
+
+    def teardown_method(self):
+        self._cache_patcher_file.stop()
+        self._cache_patcher_dir.stop()
+        import shutil
+
+        shutil.rmtree(self._cache_dir, ignore_errors=True)
+
+    def test_process_single_file(self, tmp_path):
+        """Test processing a single .apkg file."""
+        fixture = os.path.join(FIXTURES_DIR, "anime_durarara___000000097.apkg")
+        output_dir = str(tmp_path / "output")
+
+        result = self.runner.invoke(
+            cli, ["process", fixture, "--output-dir", output_dir]
+        )
+
+        assert result.exit_code == 0
+        assert "Processing: anime_durarara___000000097.apkg" in result.output
+        assert "Exported:" in result.output
+        assert "Done!" in result.output
+        assert os.path.exists(
+            os.path.join(output_dir, "anime_durarara___000000097.apkg")
+        )
+
+    def test_process_directory(self, tmp_path):
+        """Test processing a directory of .apkg files."""
+        output_dir = str(tmp_path / "output")
+
+        result = self.runner.invoke(
+            cli, ["process", FIXTURES_DIR, "--output-dir", output_dir]
+        )
+
+        assert result.exit_code == 0
+        assert "Found 3 .apkg file(s) to process" in result.output
+        assert "Done!" in result.output
+        assert len(list((tmp_path / "output").glob("*.apkg"))) == 3
+
+    def test_process_skips_cached(self, tmp_path):
+        """Test that cached files are skipped without --force."""
+        fixture = os.path.join(FIXTURES_DIR, "anime_durarara___000000097.apkg")
+        output_dir = str(tmp_path / "output")
+
+        # First run marks it cached
+        self.runner.invoke(cli, ["process", fixture, "--output-dir", output_dir])
+        # Second run should skip via cache
+        result = self.runner.invoke(
+            cli, ["process", fixture, "--output-dir", output_dir]
+        )
+
+        assert result.exit_code == 0
+        assert "Skipping (already processed):" in result.output
+
+    def test_process_skips_existing_output(self, tmp_path):
+        """Test that existing output files are skipped without --force (no cache)."""
+        fixture = os.path.join(FIXTURES_DIR, "anime_durarara___000000097.apkg")
+        output_dir = str(tmp_path / "output")
+
+        # Create output file directly (no cache entry)
+        os.makedirs(output_dir, exist_ok=True)
+        (Path(output_dir) / "anime_durarara___000000097.apkg").touch()
+
+        result = self.runner.invoke(
+            cli, ["process", fixture, "--output-dir", output_dir]
+        )
+
+        assert result.exit_code == 0
+        assert "Skipping (already exists):" in result.output
+
+    def test_process_force_overwrites(self, tmp_path):
+        """Test --force re-processes existing files."""
+        fixture = os.path.join(FIXTURES_DIR, "anime_durarara___000000097.apkg")
+        output_dir = str(tmp_path / "output")
+
+        # First run
+        self.runner.invoke(cli, ["process", fixture, "--output-dir", output_dir])
+        # Second run with --force
+        result = self.runner.invoke(
+            cli, ["process", fixture, "--output-dir", output_dir, "--force"]
+        )
+
+        assert result.exit_code == 0
+        assert "Processing: anime_durarara___000000097.apkg" in result.output
+        assert "Skipping" not in result.output
+
+    def test_process_non_apkg_file(self, tmp_path):
+        """Test error when given a non-.apkg file."""
+        txt_file = tmp_path / "test.txt"
+        txt_file.touch()
+
+        result = self.runner.invoke(cli, ["process", str(txt_file)])
+
+        assert result.exit_code != 0
+        assert "not an .apkg file" in result.output
+
+    def test_process_empty_directory(self, tmp_path):
+        """Test error when directory has no .apkg files."""
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+
+        result = self.runner.invoke(cli, ["process", str(empty_dir)])
+
+        assert result.exit_code != 0
+        assert "No .apkg files found" in result.output
+
+    def test_process_output_has_correct_fields(self, tmp_path):
+        """Test that processed output has 39 fields and correct deck."""
+        from ankicard.anki.reader import read_apkg
+
+        fixture = os.path.join(FIXTURES_DIR, "anime_durarara___000000097.apkg")
+        output_dir = str(tmp_path / "output")
+
+        self.runner.invoke(cli, ["process", fixture, "--output-dir", output_dir])
+
+        output_path = os.path.join(output_dir, "anime_durarara___000000097.apkg")
+        contents = read_apkg(output_path)
+        assert contents.deck_name == "Immersion Kit::Sentences"
+        assert len(contents.notes) == 1
+        assert len(contents.notes[0].fields) == 39
+
+    def test_process_help(self):
+        """Test process command help."""
+        result = self.runner.invoke(cli, ["process", "--help"])
+        assert result.exit_code == 0
+        assert "Re-export" in result.output

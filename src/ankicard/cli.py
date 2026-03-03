@@ -2,9 +2,16 @@ import click
 from pathlib import Path
 from .config.settings import Settings
 from .core import furigana, translation, audio, image, transcription
-from .anki.card_builder import create_note, create_deck, export_package
+from .anki.card_builder import (
+    create_note,
+    create_note_from_fields,
+    create_all_decks,
+    export_package,
+)
+from .anki.reader import read_apkg, extract_media
 from .media.manager import generate_unique_id, generate_media_filenames
 from .media.bundler import extract_from_zip, copy_media_file
+from .config.cache import is_cached, mark_cached
 
 
 def transcribe_with_error_handling(audio_path: str, settings) -> str:
@@ -163,21 +170,24 @@ def ensure_voicevox_or_fallback(settings, use_gtts: bool) -> bool:
     if audio.is_voicevox_available(settings.voicevox_url):
         return True
 
-    # Check if Docker is available before offering to start
+    # Detect container runtime for user-facing messages
+    runtime = audio.detect_container_runtime().capitalize()
+
+    # Check if Docker/Podman is available before offering to start
     if not audio.is_docker_running():
         click.echo(
-            "Error: Docker is not running. Start Docker Desktop first, "
+            f"Error: {runtime} is not running. Start {runtime} first, "
             "or use --use-gtts. Falling back to gTTS.",
             err=True,
         )
         return False
 
-    # VOICEVOX not running, prompt to start Docker
+    # VOICEVOX not running, prompt to start container
     if click.confirm(
-        "VOICEVOX is not running. Start Docker container?",
+        f"VOICEVOX is not running. Start {runtime} container?",
         default=True,
     ):
-        click.echo("Starting VOICEVOX Docker container...")
+        click.echo(f"Starting VOICEVOX {runtime} container...")
         if audio.start_voicevox_docker(base_url=settings.voicevox_url):
             click.echo("VOICEVOX is ready!")
             return True
@@ -455,7 +465,7 @@ def generate(
             )
 
     # Create Anki card
-    deck = create_deck(settings.deck_name, settings.deck_id)
+    decks = create_all_decks()
     note = create_note(
         sentence,
         english_text,
@@ -464,14 +474,82 @@ def generate(
         filenames["audio"],
         unique_id,
     )
-    deck.add_note(note)
+    decks[0].add_note(note)  # Notes go in the Sentences deck
 
     # Export
     media_files = [f for f in [final_audio_path, final_image_path] if f]
     output_path = Path(settings.output_dir) / f"japanese_card_{unique_id}.apkg"
-    export_package(deck, media_files, str(output_path))
+    export_package(decks, media_files, str(output_path))
 
     click.echo(f"Success! Created: {output_path}")
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True), metavar="<path>")
+@click.option(
+    "--output-dir", type=click.Path(), help="Output directory for .apkg files"
+)
+@click.option("--force", is_flag=True, help="Re-process even if output already exists")
+def process(path, output_dir, force):
+    """Re-export existing .apkg files with updated model and deck."""
+    settings = Settings.load()
+    if output_dir:
+        settings.output_dir = output_dir
+    settings.ensure_directories()
+
+    # Collect .apkg files
+    p = Path(path)
+    if p.is_file():
+        if p.suffix != ".apkg":
+            click.echo(f"Error: {path} is not an .apkg file", err=True)
+            raise click.Abort()
+        apkg_files = [p]
+    else:
+        apkg_files = sorted(p.glob("*.apkg"))
+        if not apkg_files:
+            click.echo(f"Error: No .apkg files found in {path}", err=True)
+            raise click.Abort()
+
+    click.echo(f"Found {len(apkg_files)} .apkg file(s) to process")
+
+    for apkg_file in apkg_files:
+        output_path = Path(settings.output_dir) / apkg_file.name
+
+        if not force and is_cached(str(apkg_file)):
+            click.echo(f"Skipping (already processed): {apkg_file.name}")
+            continue
+
+        if output_path.exists() and not force:
+            click.echo(f"Skipping (already exists): {apkg_file.name}")
+            continue
+
+        click.echo(f"Processing: {apkg_file.name}")
+
+        try:
+            contents = read_apkg(str(apkg_file))
+        except Exception as e:
+            click.echo(f"  Error reading: {e}", err=True)
+            continue
+
+        if not contents.notes:
+            click.echo("  No notes found, skipping")
+            continue
+
+        # Extract media to media dir
+        media_files = extract_media(str(apkg_file), settings.media_dir)
+
+        # Create all decks (Sentences + component subdecks)
+        decks = create_all_decks()
+
+        for note in contents.notes:
+            new_note = create_note_from_fields(note.fields)
+            decks[0].add_note(new_note)  # Notes go in the Sentences deck
+
+        export_package(decks, media_files, str(output_path))
+        mark_cached(str(apkg_file))
+        click.echo(f"  Exported: {output_path}")
+
+    click.echo("Done!")
 
 
 if __name__ == "__main__":
