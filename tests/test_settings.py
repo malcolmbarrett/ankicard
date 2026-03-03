@@ -13,8 +13,6 @@ class TestSettings:
         assert settings.media_dir == "anki_media"
         assert settings.output_dir == "anki_cards"
         assert settings.openai_api_key is None
-        assert settings.deck_id == 2059400110
-        assert settings.deck_name == "Immersion Kit"
 
     def test_settings_custom_values(self):
         """Test creating Settings with custom values."""
@@ -22,15 +20,11 @@ class TestSettings:
             media_dir="custom_media",
             output_dir="custom_output",
             openai_api_key="sk-test123",
-            deck_id=9999,
-            deck_name="Custom Deck",
         )
 
         assert settings.media_dir == "custom_media"
         assert settings.output_dir == "custom_output"
         assert settings.openai_api_key == "sk-test123"
-        assert settings.deck_id == 9999
-        assert settings.deck_name == "Custom Deck"
 
     @patch.dict(os.environ, {}, clear=True)
     @patch("ankicard.config.settings.load_dotenv")

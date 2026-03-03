@@ -2,9 +2,16 @@ import click
 from pathlib import Path
 from .config.settings import Settings
 from .core import furigana, translation, audio, image, transcription
-from .anki.card_builder import create_note, create_deck, export_package
+from .anki.card_builder import (
+    create_note,
+    create_note_from_fields,
+    create_all_decks,
+    export_package,
+)
+from .anki.reader import read_apkg, extract_media
 from .media.manager import generate_unique_id, generate_media_filenames
 from .media.bundler import extract_from_zip, copy_media_file
+from .config.cache import is_cached, mark_cached
 
 
 def transcribe_with_error_handling(audio_path: str, settings) -> str:
@@ -146,56 +153,96 @@ def transcribe(audio_path, output, language):
         raise click.Abort()
 
 
+def ensure_voicevox_or_fallback(settings, use_gtts: bool) -> bool:
+    """
+    Check VOICEVOX availability and optionally start Docker.
+
+    Args:
+        settings: Settings object with voicevox_url
+        use_gtts: If True, skip VOICEVOX entirely
+
+    Returns:
+        True if VOICEVOX should be used, False to use gTTS
+    """
+    if use_gtts:
+        return False
+
+    if audio.is_voicevox_available(settings.voicevox_url):
+        return True
+
+    # Detect container runtime for user-facing messages
+    runtime = audio.detect_container_runtime().capitalize()
+
+    # Check if Docker/Podman is available before offering to start
+    if not audio.is_docker_running():
+        click.echo(
+            f"Error: {runtime} is not running. Start {runtime} first, "
+            "or use --use-gtts. Falling back to gTTS.",
+            err=True,
+        )
+        return False
+
+    # VOICEVOX not running, prompt to start container
+    if click.confirm(
+        f"VOICEVOX is not running. Start {runtime} container?",
+        default=True,
+    ):
+        click.echo(f"Starting VOICEVOX {runtime} container...")
+        if audio.start_voicevox_docker(base_url=settings.voicevox_url):
+            click.echo("VOICEVOX is ready!")
+            return True
+        else:
+            click.echo(
+                "Failed to start VOICEVOX. Falling back to gTTS.",
+                err=True,
+            )
+            return False
+    else:
+        click.echo("Falling back to gTTS.", err=True)
+        return False
+
+
 @cli.command(name="audio")
 @click.argument("sentence", metavar="<sentence>")
 @click.option("--output", help="Output file path")
 @click.option("--slow", is_flag=True, help="Generate slow-speed audio (gTTS only)")
 @click.option(
-    "--no-ai",
+    "--use-gtts",
     is_flag=True,
-    help="Use gTTS instead of OpenAI TTS (default: OpenAI TTS if API key available)",
+    help="Use gTTS instead of VOICEVOX",
 )
-@click.option("--voice", default="alloy", help="OpenAI voice (default: alloy)")
-@click.option("--model", default="tts-1", help="OpenAI model (default: tts-1)")
-@click.option("--speed", type=float, default=1.0, help="Playback speed (default: 1.0)")
 @click.option(
-    "--enhance-audio",
-    is_flag=True,
-    help="Enhance text for natural speech (requires OpenAI TTS)",
+    "--speaker-id",
+    type=int,
+    default=None,
+    help="VOICEVOX speaker ID (default: from settings or 13)",
 )
-def audio_cmd(sentence, output, slow, no_ai, voice, model, speed, enhance_audio):
+@click.option(
+    "--speed",
+    type=float,
+    default=None,
+    help="VOICEVOX speed scale (default: 0.95)",
+)
+def audio_cmd(sentence, output, slow, use_gtts, speaker_id, speed):
     """Generate audio file for sentence."""
     settings = Settings.load()
     settings.ensure_directories()
-
-    # Validate that enhance-audio requires OpenAI TTS
-    if enhance_audio and no_ai:
-        click.echo(
-            "Error: --enhance-audio requires OpenAI TTS (cannot use with --no-ai)",
-            err=True,
-        )
-        raise click.Abort()
 
     if not output:
         unique_id = generate_unique_id()
         output = Path(settings.media_dir) / f"anki_{unique_id}.mp3"
 
-    # Use OpenAI TTS if API key available and not disabled (default), fallback to gTTS
-    if settings.openai_api_key and not no_ai:
-        audio.generate_audio_openai(
+    if ensure_voicevox_or_fallback(settings, use_gtts):
+        audio.generate_audio_voicevox(
             sentence,
             str(output),
-            api_key=settings.openai_api_key,
-            model=model,
-            voice=voice,
-            speed=speed,
-            enhance=enhance_audio,
+            base_url=settings.voicevox_url,
+            speaker_id=speaker_id
+            if speaker_id is not None
+            else settings.voicevox_speaker_id,
+            speed=speed if speed is not None else 0.95,
         )
     else:
-        # Fallback to gTTS (no API key available or --no-ai flag used)
-        if enhance_audio:
-            click.echo("Error: --enhance-audio requires OpenAI API key", err=True)
-            raise click.Abort()
         audio.generate_audio(sentence, str(output), slow=slow)
 
     click.echo(f"Generated audio: {output}")
@@ -275,28 +322,27 @@ def image_cmd(sentence, audio_path, output, prompt):
 @click.option("--no-image", is_flag=True, help="Skip image generation")
 @click.option("--no-audio", is_flag=True, help="Skip audio generation")
 @click.option(
-    "--no-ai-audio",
+    "--use-gtts",
     is_flag=True,
-    help="Use gTTS instead of OpenAI TTS (default: OpenAI TTS if API key available)",
+    help="Use gTTS instead of VOICEVOX",
 )
 @click.option(
     "--use-ai-translation", is_flag=True, help="Use OpenAI Chat for translation"
 )
 @click.option(
-    "--ai-voice",
-    default="alloy",
-    help="OpenAI TTS voice (alloy, echo, fable, onyx, nova, shimmer)",
+    "--speaker-id",
+    type=int,
+    default=None,
+    help="VOICEVOX speaker ID (default: from settings or 13)",
 )
 @click.option(
-    "--ai-audio-model", default="tts-1", help="OpenAI TTS model (tts-1, tts-1-hd)"
+    "--speed",
+    type=float,
+    default=None,
+    help="VOICEVOX speed scale (default: 0.95)",
 )
 @click.option(
     "--ai-translation-model", default="gpt-4o-mini", help="OpenAI translation model"
-)
-@click.option(
-    "--enhance-audio",
-    is_flag=True,
-    help="Enhance text for natural speech (use with OpenAI TTS)",
 )
 def generate(
     sentence,
@@ -309,12 +355,11 @@ def generate(
     output_dir,
     no_image,
     no_audio,
-    no_ai_audio,
+    use_gtts,
     use_ai_translation,
-    ai_voice,
-    ai_audio_model,
+    speaker_id,
+    speed,
     ai_translation_model,
-    enhance_audio,
 ):
     """Generate complete Anki card from sentence."""
     settings = Settings.load()
@@ -375,14 +420,6 @@ def generate(
         if extracted["audio"] and not audio_path:
             audio_path = extracted["audio"]
 
-    # Validate that enhance-audio requires OpenAI TTS
-    if enhance_audio and (not settings.openai_api_key or no_ai_audio):
-        click.echo(
-            "Error: --enhance-audio requires OpenAI TTS (cannot use with --no-ai-audio or without API key)",
-            err=True,
-        )
-        raise click.Abort()
-
     # Audio handling
     final_audio_path = None
     if not no_audio:
@@ -399,22 +436,19 @@ def generate(
             )
         else:
             # Generate TTS audio
-            # Use OpenAI TTS if API key available and not disabled (default), fallback to gTTS
-            if settings.openai_api_key and not no_ai_audio:
-                # Use OpenAI TTS (default when API key is available)
-                final_audio_path = audio.generate_audio_openai(
+            audio_output = str(Path(settings.media_dir) / filenames["audio"])
+            if ensure_voicevox_or_fallback(settings, use_gtts):
+                final_audio_path = audio.generate_audio_voicevox(
                     sentence,
-                    str(Path(settings.media_dir) / filenames["audio"]),
-                    api_key=settings.openai_api_key,
-                    model=ai_audio_model,
-                    voice=ai_voice,
-                    enhance=enhance_audio,
+                    audio_output,
+                    base_url=settings.voicevox_url,
+                    speaker_id=speaker_id
+                    if speaker_id is not None
+                    else settings.voicevox_speaker_id,
+                    speed=speed if speed is not None else 0.95,
                 )
             else:
-                # Fallback to gTTS (no API key available or --no-ai-audio flag used)
-                final_audio_path = audio.generate_audio(
-                    sentence, str(Path(settings.media_dir) / filenames["audio"])
-                )
+                final_audio_path = audio.generate_audio(sentence, audio_output)
 
     # Image
     final_image_path = None
@@ -431,7 +465,7 @@ def generate(
             )
 
     # Create Anki card
-    deck = create_deck(settings.deck_name, settings.deck_id)
+    decks = create_all_decks()
     note = create_note(
         sentence,
         english_text,
@@ -440,14 +474,82 @@ def generate(
         filenames["audio"],
         unique_id,
     )
-    deck.add_note(note)
+    decks[0].add_note(note)  # Notes go in the Sentences deck
 
     # Export
     media_files = [f for f in [final_audio_path, final_image_path] if f]
     output_path = Path(settings.output_dir) / f"japanese_card_{unique_id}.apkg"
-    export_package(deck, media_files, str(output_path))
+    export_package(decks, media_files, str(output_path))
 
     click.echo(f"Success! Created: {output_path}")
+
+
+@cli.command()
+@click.argument("path", type=click.Path(exists=True), metavar="<path>")
+@click.option(
+    "--output-dir", type=click.Path(), help="Output directory for .apkg files"
+)
+@click.option("--force", is_flag=True, help="Re-process even if output already exists")
+def process(path, output_dir, force):
+    """Re-export existing .apkg files with updated model and deck."""
+    settings = Settings.load()
+    if output_dir:
+        settings.output_dir = output_dir
+    settings.ensure_directories()
+
+    # Collect .apkg files
+    p = Path(path)
+    if p.is_file():
+        if p.suffix != ".apkg":
+            click.echo(f"Error: {path} is not an .apkg file", err=True)
+            raise click.Abort()
+        apkg_files = [p]
+    else:
+        apkg_files = sorted(p.glob("*.apkg"))
+        if not apkg_files:
+            click.echo(f"Error: No .apkg files found in {path}", err=True)
+            raise click.Abort()
+
+    click.echo(f"Found {len(apkg_files)} .apkg file(s) to process")
+
+    for apkg_file in apkg_files:
+        output_path = Path(settings.output_dir) / apkg_file.name
+
+        if not force and is_cached(str(apkg_file)):
+            click.echo(f"Skipping (already processed): {apkg_file.name}")
+            continue
+
+        if output_path.exists() and not force:
+            click.echo(f"Skipping (already exists): {apkg_file.name}")
+            continue
+
+        click.echo(f"Processing: {apkg_file.name}")
+
+        try:
+            contents = read_apkg(str(apkg_file))
+        except Exception as e:
+            click.echo(f"  Error reading: {e}", err=True)
+            continue
+
+        if not contents.notes:
+            click.echo("  No notes found, skipping")
+            continue
+
+        # Extract media to media dir
+        media_files = extract_media(str(apkg_file), settings.media_dir)
+
+        # Create all decks (Sentences + component subdecks)
+        decks = create_all_decks()
+
+        for note in contents.notes:
+            new_note = create_note_from_fields(note.fields)
+            decks[0].add_note(new_note)  # Notes go in the Sentences deck
+
+        export_package(decks, media_files, str(output_path))
+        mark_cached(str(apkg_file))
+        click.echo(f"  Exported: {output_path}")
+
+    click.echo("Done!")
 
 
 if __name__ == "__main__":
