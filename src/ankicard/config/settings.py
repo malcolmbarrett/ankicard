@@ -8,6 +8,8 @@ class Settings:
     media_dir: str = "anki_media"
     output_dir: str = "anki_cards"
     openai_api_key: str | None = None
+    voicevox_url: str = "http://127.0.0.1:50021"
+    voicevox_speaker_id: int = 13
     deck_id: int = 2059400110
     deck_name: str = "Immersion Kit"
     voicevox_url: str = "http://127.0.0.1:50021"

@@ -7,9 +7,25 @@ A modular CLI tool for generating rich media Anki cards from Japanese sentences.
 
 The cards follow the exact format used by [Immersion Kit](https://www.immersionkit.com/). This makes the tool useful for creating consistent cards for sentences found on [Tatoeba](https://tatoeba.org/) or other sources that are missing from the Immersion Kit or [Nadeshiko](https://nadeshiko.co/) databases.
 
+## Prerequisites
+
+The following must be installed on your system:
+
+- **[uv](https://docs.astral.sh/uv/)**: Python package manager
+- **[Docker Desktop](https://www.docker.com/products/docker-desktop/)**: Required to run the VOICEVOX TTS engine
+- **[ffmpeg](https://ffmpeg.org/)**: Required for audio format conversion (WAV to MP3)
+
+```bash
+# macOS
+brew install ffmpeg
+
+# Pull the VOICEVOX Docker image (one-time)
+docker pull voicevox/voicevox_engine:cpu-latest
+```
+
 ## Installation
 
-Ensure you have `uv` installed, then install the CLI tool:
+Install the CLI tool with `uv`:
 
 ```bash
 # Using make
@@ -23,13 +39,15 @@ This makes the `ankicard` command available globally.
 
 ## Configuration
 
-Create a `.env` file in your working directory with your OpenAI API key to enable image generation and audio transcription:
+Create a `.env` file in your working directory:
 
 ```
-OPENAI_API_KEY=your-key-here
+OPENAI_API_KEY=your-key-here    # Required for image generation and audio transcription
+VOICEVOX_URL=http://127.0.0.1:50021  # Optional, this is the default
+VOICEVOX_SPEAKER_ID=13          # Optional, default: 13 (青山龍星)
 ```
 
-Image generation and audio transcription are optional - the tool will skip these features if no API key is provided.
+Image generation and audio transcription require the OpenAI API key. VOICEVOX audio works without any API key since it runs locally.
 
 ## Audio Transcription
 
@@ -62,6 +80,9 @@ ankicard generate "中国でも戦国時代の墳墓からガラスが出土し�
 - `--zip PATH` - Extract image and audio from a ZIP bundle
 - `--no-image` - Skip image generation
 - `--no-audio` - Skip audio generation
+- `--use-gtts` - Use gTTS instead of VOICEVOX for audio
+- `--speaker-id INT` - VOICEVOX speaker ID (default: 13)
+- `--speed FLOAT` - VOICEVOX speed scale (default: 0.95)
 - `--output-dir PATH` - Custom output directory (default: `anki_cards/`)
 
 #### Examples
@@ -139,15 +160,23 @@ ankicard translate --from-audio recording.mp3
 
 #### Audio
 
-Generate audio file only:
+Generate audio using VOICEVOX (primary) or gTTS (fallback):
 
 ```bash
 ankicard audio "ありがとう"
 # Output: Generated audio: anki_media/anki_XXXXX.mp3
 
-# With options
-ankicard audio "難しい文章" --slow --output custom.mp3
+# Custom VOICEVOX speaker and speed
+ankicard audio "難しい文章" --speaker-id 2 --speed 0.8
+
+# Use gTTS instead of VOICEVOX
+ankicard audio "ありがとう" --use-gtts
+
+# gTTS with slow speed
+ankicard audio "難しい文章" --use-gtts --slow --output custom.mp3
 ```
+
+If VOICEVOX isn't running, the CLI will offer to start the Docker container for you. If Docker isn't available, it falls back to gTTS automatically.
 
 #### Image
 
