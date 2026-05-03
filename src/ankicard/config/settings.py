@@ -8,6 +8,7 @@ class Settings:
     media_dir: str = "anki_media"
     output_dir: str = "anki_cards"
     openai_api_key: str | None = None
+    gemini_api_key: str | None = None
     voicevox_url: str = "http://127.0.0.1:50021"
     voicevox_speaker_id: int = 13
     deck_id: int = 2059400110
@@ -22,6 +23,7 @@ class Settings:
             media_dir=os.getenv("MEDIA_DIR", "anki_media"),
             output_dir=os.getenv("OUTPUT_DIR", "anki_cards"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
+            gemini_api_key=os.getenv("GOOGLE_GENAI_API_KEY"),
             voicevox_url=os.getenv("VOICEVOX_URL", "http://127.0.0.1:50021"),
             voicevox_speaker_id=int(os.getenv("VOICEVOX_SPEAKER_ID", "13")),
         )

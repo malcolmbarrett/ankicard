@@ -263,8 +263,8 @@ def image_cmd(sentence, audio_path, output, prompt):
     settings = Settings.load()
     settings.ensure_directories()
 
-    if not settings.openai_api_key:
-        click.echo("Error: OPENAI_API_KEY not found in .env", err=True)
+    if not settings.gemini_api_key:
+        click.echo("Error: GOOGLE_GENAI_API_KEY not found in .env", err=True)
         raise click.Abort()
 
     if audio_path:
@@ -282,7 +282,7 @@ def image_cmd(sentence, audio_path, output, prompt):
     if not prompt:
         prompt = translation.translate_to_english(sentence)
 
-    result = image.generate_image(prompt, str(output), settings.openai_api_key)
+    result = image.generate_image(prompt, str(output), settings.gemini_api_key)
     if result:
         click.echo(f"Generated image: {result}")
     else:
@@ -457,11 +457,11 @@ def generate(
             final_image_path = copy_media_file(
                 image_path, settings.media_dir, filenames["image"]
             )
-        elif settings.openai_api_key:
+        elif settings.gemini_api_key:
             final_image_path = image.generate_image(
                 english_text,
                 str(Path(settings.media_dir) / filenames["image"]),
-                settings.openai_api_key,
+                settings.gemini_api_key,
             )
 
     # Create Anki card

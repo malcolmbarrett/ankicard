@@ -256,7 +256,7 @@ class TestImageCommand:
         """Test basic image command."""
         mock_settings_instance = Mock()
         mock_settings_instance.media_dir = "anki_media"
-        mock_settings_instance.openai_api_key = "test-key"
+        mock_settings_instance.gemini_api_key = "test-key"
         mock_settings.load.return_value = mock_settings_instance
 
         mock_translate.return_value = "cat"
@@ -271,13 +271,13 @@ class TestImageCommand:
     def test_image_no_api_key(self, mock_settings):
         """Test image command without API key."""
         mock_settings_instance = Mock()
-        mock_settings_instance.openai_api_key = None
+        mock_settings_instance.gemini_api_key = None
         mock_settings.load.return_value = mock_settings_instance
 
         result = self.runner.invoke(cli, ["image", "猫"])
 
         assert result.exit_code != 0
-        assert "OPENAI_API_KEY" in result.output
+        assert "GOOGLE_GENAI_API_KEY" in result.output
 
 
 class TestGenerateCommand:

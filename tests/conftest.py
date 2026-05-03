@@ -39,6 +39,7 @@ def mock_settings(tmp_path):
         media_dir=str(tmp_path / "media"),
         output_dir=str(tmp_path / "cards"),
         openai_api_key="test-key-123",
+        gemini_api_key="test-gemini-key",
         voicevox_url="http://127.0.0.1:50021",
         voicevox_speaker_id=13,
     )
