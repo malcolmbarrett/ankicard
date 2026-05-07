@@ -510,17 +510,21 @@ def process(path, output_dir, force):
             click.echo(f"Error: No .apkg files found in {path}", err=True)
             raise click.Abort()
 
-    click.echo(f"Found {len(apkg_files)} .apkg file(s) to process")
+    noun = "file" if len(apkg_files) == 1 else "files"
+    click.echo(f"Found {len(apkg_files)} .apkg {noun} to process")
+
+    skipped_cached = 0
+    skipped_existing = 0
 
     for apkg_file in apkg_files:
         output_path = Path(settings.output_dir) / apkg_file.name
 
         if not force and is_cached(str(apkg_file)):
-            click.echo(f"Skipping (already processed): {apkg_file.name}")
+            skipped_cached += 1
             continue
 
         if output_path.exists() and not force:
-            click.echo(f"Skipping (already exists): {apkg_file.name}")
+            skipped_existing += 1
             continue
 
         click.echo(f"Processing: {apkg_file.name}")
@@ -548,6 +552,11 @@ def process(path, output_dir, force):
         export_package(decks, media_files, str(output_path))
         mark_cached(str(apkg_file))
         click.echo(f"  Exported: {output_path}")
+
+    if skipped_cached:
+        click.echo(f"{skipped_cached} skipped (already processed)")
+    if skipped_existing:
+        click.echo(f"{skipped_existing} skipped (already exists)")
 
     click.echo("Done!")
 

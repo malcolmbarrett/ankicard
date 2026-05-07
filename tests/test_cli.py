@@ -755,7 +755,7 @@ class TestProcessCommand:
         )
 
         assert result.exit_code == 0
-        assert "Found 3 .apkg file(s) to process" in result.output
+        assert "Found 3 .apkg files to process" in result.output
         assert "Done!" in result.output
         assert len(list((tmp_path / "output").glob("*.apkg"))) == 3
 
@@ -772,7 +772,7 @@ class TestProcessCommand:
         )
 
         assert result.exit_code == 0
-        assert "Skipping (already processed):" in result.output
+        assert "1 skipped (already processed)" in result.output
 
     def test_process_skips_existing_output(self, tmp_path):
         """Test that existing output files are skipped without --force (no cache)."""
@@ -788,7 +788,7 @@ class TestProcessCommand:
         )
 
         assert result.exit_code == 0
-        assert "Skipping (already exists):" in result.output
+        assert "1 skipped (already exists)" in result.output
 
     def test_process_force_overwrites(self, tmp_path):
         """Test --force re-processes existing files."""
