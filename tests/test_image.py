@@ -82,7 +82,9 @@ class TestGenerateImage:
 
     @patch("ankicard.core.image.genai.Client")
     @patch("ankicard.core.image.print")
-    def test_generate_image_api_error(self, mock_print, mock_client_cls, test_image_path):
+    def test_generate_image_api_error(
+        self, mock_print, mock_client_cls, test_image_path
+    ):
         """Test error handling when API call fails."""
         mock_client = Mock()
         mock_client_cls.return_value = mock_client
